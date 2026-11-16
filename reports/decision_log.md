@@ -91,3 +91,25 @@ changes, and how to go back. Newest entries at the bottom. Git tags mark decisio
   ourselves (also shows which names matched; synonyms under the new taxonomy may not match and
   will be reported).
 - Download v2: 0010811-261110092616502.
+
+## Independent effort layer built (2026-11-16)
+- GBIF SQL download v2 0010811-261110092616502, **DOI 10.15468/dl.4739rd** (cite this one):
+  193,814 rows (0.5-degree cell x year x is_target); 24.5 M non-target Fungi occurrences in
+  26,369 cells; 8,159 target-species occurrences matched by name. Script `src/01d_effort_from_sql.py`.
+- Validation (`tools/check_effort_cells.py`) against the independent API counts on 1,972 cells:
+  Spearman 0.994, median SQL/API ratio 0.999 (half-cell shifts drop to ~0.68: decoding correct);
+  name-based target matching recovers ~95% of target records (218 vs 229).
+
+## Pilot v2 - with independent effort and set G (2026-11-16)
+- Files: `reports/pilot_runs/v2_indep_effort/`. N = 5, spatial 5-fold CV, 1 seed, defaults.
+- Effort-only score (non-target Fungi before survey, no model): PR-AUC 0.342, ROC 0.775
+  (prior count 0.301 / 0.722; all-years diagnostic 0.415 / 0.861).
+- PR-AUC LGBM / RF: A 0.168 / 0.154; D 0.361 / 0.241 (RF default weak on 4 features);
+  E 0.388 / 0.373; C 0.407 / 0.429; **G 0.421 / 0.450** (best). GATs (v1): 0.144 / 0.191.
+- **C - G (traits beyond effort + prior + location): LGBM -0.013 (1/5 folds, CI [-0.088, +0.018]);
+  RF -0.021 (2/5, CI [-0.028, +0.030]); ROC change ~0.** Traits add nothing once effort, prior
+  presence and location are known. E - D (LGBM) +0.027, CI [-0.022, +0.080].
+- **Reading:** the trait gain in pilot v1 was location in disguise. Labels are explained by
+  surveillance effort, prior presence and geography. Recommendation (Claude): evaluation-paper
+  framing with EcoPE-GAT as a case study. Awaiting user decision (D9).
+- Caveats: single horizon, single seed, default hyperparameters, high fold variance.
