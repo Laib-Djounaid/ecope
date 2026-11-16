@@ -78,3 +78,16 @@ changes, and how to go back. Newest entries at the bottom. Git tags mark decisio
 - **Provisional reading:** traits add a modest, consistent gain over prior presence; context
   adds more; part of the trait gain is probably location in disguise. Decision deferred to
   pilot v2 (with independent effort and set G).
+
+## D8 - GBIF SQL effort query corrected (2026-11-16)
+- **Diagnosis** (download 0010758-261110092616502, Luxembourg 2020, values of the filter columns):
+  in the GBIF SQL table `kingdomKey` uses the new letter keys (Fungi = `F`, not 5) and
+  `occurrenceStatus` uses `DETECTED` / `NOT_DETECTED` (not `PRESENT`). Each of these two filters
+  alone removed every row of download v1 (0010697-261110092616502, empty, DOI not to be cited).
+  The old integer `speciesKey` values of the label download do not match the new taxonomy either.
+- **Fix (query v2, `data/gbif_effort_sql/query_v2.sql`):** filter on `kingdom = 'Fungi'` and
+  `occurrenceStatus IN ('DETECTED', 'PRESENT')`; instead of excluding target species by key,
+  output an `is_target` flag from the 20 fungal target species NAMES, and subtract target counts
+  ourselves (also shows which names matched; synonyms under the new taxonomy may not match and
+  will be reported).
+- Download v2: 0010811-261110092616502.
