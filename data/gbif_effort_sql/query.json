@@ -1,0 +1,5 @@
+{
+ "sendNotification": true,
+ "format": "SQL_TSV_ZIP",
+ "sql": "SELECT GBIF_DMSGCode(1800, decimalLatitude, decimalLongitude, 0) AS cell05deg, \"year\", COUNT(*) AS n_occurrences FROM occurrence WHERE kingdomKey = 5 AND basisOfRecord IS NOT NULL AND basisOfRecord NOT IN ('MATERIAL_SAMPLE', 'FOSSIL_SPECIMEN') AND occurrenceStatus = 'PRESENT' AND hasCoordinate = TRUE AND hasGeospatialIssues = FALSE AND \"year\" >= 2000 AND \"year\" <= 2025 AND (speciesKey IS NULL OR speciesKey NOT IN (2514154, 2514501, 2517693, 2555201, 2568828, 2569273, 2578272, 2578415, 2583139, 2583154, 2615946, 2616205, 2621931, 3377675, 5251676, 5251961, 5262796, 5264853, 7778821, 8092646)) GROUP BY cell05deg, \"year\""
+}

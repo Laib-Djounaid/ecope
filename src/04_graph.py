@@ -30,6 +30,7 @@ from common import load_config, p
 from features import (CONTEXT_BLOCKS, FEATURE_SETS, FoldPreprocessor, assemble, folds_of,
                       labels, load_modelling_table, raw_blocks, split_indices)
 from graph_models import GNN, knn_graph
+from checkpoint import cached_refit, run_study
 from metrics import evaluate, safe_ap
 from nn_train import predict, set_seed, train_full_batch
 
@@ -88,7 +89,7 @@ def prepare(e, cfg, scheme, fold, N, k, setting):
     return y, tr, iv, te, XA, CTX, Ztrait, ei, ew
 
 
-def run_job(scheme, setting, model, fold, cfg, n_trials, threads, k, horizons):
+def run_job(scheme, setting, model, fold, cfg, n_trials, threads, k, horizons, ckpt_dir):
     """Tune once (inner-val PR-AUC, tuning horizon), then refit every horizon x seed."""
     torch.set_num_threads(threads)
     t0 = time.time()
@@ -142,18 +143,22 @@ def run_job(scheme, setting, model, fold, cfg, n_trials, threads, k, horizons):
                 space.pop("heads")
             return tab.suggest("gnn", trial, {"gnn": space})
 
-    sampler = optuna.samplers.TPESampler(seed=cfg["evaluation"]["split_seed"])
-    study = optuna.create_study(direction="maximize", sampler=sampler)
-    study.optimize(lambda tl: safe_ap(yt[iv], fp(suggest_fn(tl), 0, yt)[0][iv]), n_trials=n_trials)
+    # checkpoints: Optuna study saved after every trial, each refit saved when it finishes
+    ck = ckpt_dir / f"{setting}_{model}_f{str(fold).replace(' ', '_')}"
+    study = run_study("optuna", ck, lambda tl: safe_ap(yt[iv], fp(suggest_fn(tl), 0, yt)[0][iv]),
+                      n_trials, cfg["evaluation"]["split_seed"])
     best = study.best_params
     t_tune = time.time() - t0
     for N in horizons:
         y = Y[N]
         for seed in cfg["seeds"]:
-            s, info = fp(best, seed, y)
-            rows.append({**evaluate(y[te], s[te]), "seed": seed, "horizon": N,
-                         "inner_val_pr_auc": safe_ap(y[iv], s[iv]), **info})
-            preds[f"N{N}_seed{seed}"] = s[te]
+            def refit(seed=seed, y=y):
+                s, info = fp(best, seed, y)
+                return {"te": s[te], "iv": s[iv]}, info
+            arrs, info = cached_refit(ck / f"N{N}_seed{seed}", refit)
+            rows.append({**evaluate(y[te], arrs["te"]), "seed": seed, "horizon": N,
+                         "inner_val_pr_auc": safe_ap(y[iv], arrs["iv"]), **info})
+            preds[f"N{N}_seed{seed}"] = arrs["te"]
         preds[f"y_test_N{N}"] = y[te]
     for r in rows:
         r.update({"scheme": scheme, "setting": setting, "model": model, "k": k, "fold": str(fold),
@@ -198,7 +203,7 @@ def main() -> None:
     T0 = time.time()
 
     def wrapped(st, m, f, tag):
-        rows, bp, preds = run_job(a.scheme, st, m, f, cfg, n_trials, a.threads, k, H)
+        rows, bp, preds = run_job(a.scheme, st, m, f, cfg, n_trials, a.threads, k, H, out / "checkpoints")
         np.savez_compressed(out / "preds" / f"{tag}.npz", **preds)
         pd.DataFrame(rows).to_csv(out / "metrics_parts" / f"{tag}.csv", index=False)
         json.dump(bp, open(out / "metrics_parts" / f"{tag}.json", "w"))

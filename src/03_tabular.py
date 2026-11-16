@@ -27,6 +27,7 @@ from joblib import Parallel, delayed
 from common import load_config, p
 from features import (FEATURE_SETS, FoldPreprocessor, assemble, folds_of, labels,
                       load_modelling_table, raw_blocks, split_indices)
+from checkpoint import cached_refit, run_study
 from metrics import evaluate, safe_ap
 
 optuna.logging.set_verbosity(optuna.logging.WARNING)
@@ -99,7 +100,7 @@ def fit_predict(model: str, prm: dict, X: np.ndarray, y: np.ndarray, tr: np.ndar
 
 # --------------------------------------------------------------------------- one job
 def run_job(scheme: str, fs: str, model: str, fold, cfg: dict, n_trials: int, threads: int,
-            horizons: list[int]) -> tuple[list[dict], dict, dict]:
+            horizons: list[int], ckpt_dir: Path) -> tuple[list[dict], dict, dict]:
     """Tune once on the inner-validation PR-AUC of the tuning horizon, then refit the best
     parameters with every seed for every horizon and evaluate on the outer test fold."""
     t0 = time.time()
@@ -123,24 +124,26 @@ def run_job(scheme: str, fs: str, model: str, fold, cfg: dict, n_trials: int, th
         yt = labels(e, cfg, cfg["evaluation"]["tuning_horizon"])
         if yt[tr].sum() == 0 or yt[iv].sum() == 0:
             raise RuntimeError(f"no positives in train/inner-val for {scheme} fold {fold}")
-        sampler = optuna.samplers.TPESampler(seed=cfg["evaluation"]["split_seed"])
-        study = optuna.create_study(direction="maximize", sampler=sampler)
-
         def objective(trial):
             prm = suggest(model, trial, tc["search_space"])
             s, _ = fit_predict(model, prm, X, yt, tr, iv, seed=0, threads=threads, fixed=tc["fixed"])
             return safe_ap(yt[iv], s[iv])
 
-        study.optimize(objective, n_trials=n_trials)
+        # checkpoints: Optuna study saved after every trial, each refit saved when it finishes
+        ck = ckpt_dir / f"{fs}_{model}_f{str(fold).replace(' ', '_')}"
+        study = run_study("optuna", ck, objective, n_trials, cfg["evaluation"]["split_seed"])
         best = study.best_params
         for N in horizons:
             y = Y[N]
             for seed in cfg["seeds"]:
-                s, info = fit_predict(model, best, X, y, tr, iv, seed=seed, threads=threads,
-                                      fixed=tc["fixed"])
-                rows.append({**evaluate(y[te], s[te]), "seed": seed, "horizon": N,
-                             "inner_val_pr_auc": safe_ap(y[iv], s[iv]), **info})
-                preds[f"N{N}_seed{seed}"] = s[te]
+                def refit(seed=seed, y=y):
+                    s, info = fit_predict(model, best, X, y, tr, iv, seed=seed, threads=threads,
+                                          fixed=tc["fixed"])
+                    return {"te": s[te], "iv": s[iv]}, info
+                arrs, info = cached_refit(ck / f"N{N}_seed{seed}", refit)
+                rows.append({**evaluate(y[te], arrs["te"]), "seed": seed, "horizon": N,
+                             "inner_val_pr_auc": safe_ap(y[iv], arrs["iv"]), **info})
+                preds[f"N{N}_seed{seed}"] = arrs["te"]
     for N in horizons:
         preds[f"y_test_N{N}"] = Y[N][te]
     for r in rows:
@@ -164,7 +167,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--scheme", default="spatial", choices=["spatial", "random", "loco"])
     ap.add_argument("--models", nargs="+", default=["score_prior", "lr", "lgbm", "rf", "mlp"])
-    ap.add_argument("--fsets", nargs="+", default=["A", "B", "C"])
+    ap.add_argument("--fsets", nargs="+", default=["A", "B", "C", "D", "E"])
     ap.add_argument("--trials", type=int)
     ap.add_argument("--n-jobs", type=int, default=3)
     ap.add_argument("--threads", type=int, default=3)
@@ -192,7 +195,7 @@ def main() -> None:
     print(f"{len(jobs)} jobs ({a.scheme}), {n_trials} trials each, n_jobs={a.n_jobs}", flush=True)
 
     def wrapped(fs, model, f, tag):
-        rows, bp, preds = run_job(a.scheme, fs, model, f, cfg, n_trials, a.threads, H)
+        rows, bp, preds = run_job(a.scheme, fs, model, f, cfg, n_trials, a.threads, H, out / "checkpoints")
         if model.startswith("score_"):
             for r in rows:
                 r["fset"] = "-"

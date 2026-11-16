@@ -11,10 +11,19 @@ import torch.nn as nn
 from metrics import safe_ap
 
 
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
 def set_seed(seed: int) -> None:
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+
+
+def to_device(data: dict, device=DEVICE) -> dict:
+    return {k: (v.to(device) if torch.is_tensor(v) else v) for k, v in data.items()}
 
 
 class MLP(nn.Module):
@@ -44,17 +53,20 @@ def train_full_batch(model: nn.Module, data, y: torch.Tensor, train_idx: np.ndar
     graph models use full-batch forward passes over the whole graph.
     """
     set_seed(seed)
+    model = model.to(DEVICE)
+    data = to_device(data)                                   # CPU or GPU, same code path
+    yv = y[val_idx].numpy()
+    y = y.to(DEVICE)
     opt = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     sched = torch.optim.lr_scheduler.ReduceLROnPlateau(opt, mode="max", factor=0.5, patience=10)
-    lossf = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(pos_weight, dtype=torch.float32))
-    tr = torch.as_tensor(train_idx)
-    yv = y[val_idx].numpy()
+    lossf = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(pos_weight, dtype=torch.float32, device=DEVICE))
+    tr = torch.as_tensor(train_idx, device=DEVICE)
     best, best_state, bad, hist = -1.0, None, 0, []
     gen = torch.Generator().manual_seed(seed)
     for ep in range(max_epochs):
         model.train()
         if minibatch:
-            perm = tr[torch.randperm(len(tr), generator=gen)]
+            perm = tr[torch.randperm(len(tr), generator=gen).to(DEVICE)]
             for s in range(0, len(perm), minibatch):
                 b = perm[s:s + minibatch]
                 opt.zero_grad()
@@ -84,6 +96,7 @@ def train_full_batch(model: nn.Module, data, y: torch.Tensor, train_idx: np.ndar
 
 @torch.no_grad()
 def predict(model: nn.Module, data) -> np.ndarray:
-    """Probabilities for all rows/nodes."""
+    """Probabilities for all rows/nodes (data moved to the model's device if needed)."""
     model.eval()
-    return torch.sigmoid(model(data)).numpy()
+    dev = next(model.parameters()).device
+    return torch.sigmoid(model(to_device(data, dev))).cpu().numpy()

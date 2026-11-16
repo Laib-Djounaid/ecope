@@ -20,6 +20,9 @@ def load_modelling_table(cfg: dict) -> pd.DataFrame:
     d = pd.read_parquet(proc / "plots.parquet")
     s = pd.read_parquet(proc / "splits.parquet")
     e = s.merge(d, on="PlotObservationID", how="left", validate="one_to_one")
+    eff = proc / "effort_layer.parquet"
+    if eff.exists():   # independent effort layer from src/01c_effort_layer.py
+        e = e.merge(pd.read_parquet(eff), on="PlotObservationID", how="left", validate="one_to_one")
     assert e["eligible_N5"].all()
     return e
 
@@ -48,13 +51,20 @@ def raw_blocks(e: pd.DataFrame, cfg: dict, buffer_km: int | None = None,
         "prior_n_species": e[f"nsp_prior_b{b}_{v}"].astype(float),
         "prior_any": e[f"prior_any_b{b}_{v}"].astype(float),
     })
-    return {"traits": tr, "attrs": attrs, "env": env, "geo": geo, "biome": biome, "prior": prior}
+    blocks = {"traits": tr, "attrs": attrs, "env": env, "geo": geo, "biome": biome, "prior": prior}
+    if "effort_fungi_prior" in e.columns:
+        # independent effort (non-target Fungi records within the buffer BEFORE the survey year)
+        blocks["effort"] = pd.DataFrame({"effort_fungi_prior_log": np.log1p(e["effort_fungi_prior"])})
+    return blocks
 
 
 FEATURE_SETS = {
-    "A": ["traits", "attrs"],                                   # traits + plot attributes
-    "B": ["traits", "attrs", "env", "geo", "biome"],            # A + ecological context
-    "C": ["traits", "attrs", "env", "geo", "biome", "prior"],   # B + prior presence
+    "A": ["traits", "attrs"],                                             # traits + plot attributes
+    "B": ["traits", "attrs", "env", "geo", "biome"],                      # A + ecological context
+    "C": ["traits", "attrs", "env", "geo", "biome", "prior", "effort"],   # B + prior + effort
+    "D": ["prior", "effort"],                                             # no-ecology baseline
+    "E": ["prior", "effort", "traits", "attrs"],                          # D + traits
+    "G": ["prior", "effort", "env", "geo", "biome"],                      # D + context, no traits
 }
 CONTEXT_BLOCKS = ["env", "geo", "biome"]                         # EcoPE inputs
 

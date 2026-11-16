@@ -1,0 +1,41 @@
+independent effort layer: NO (sets C0/D0/E0)
+fold 0 done
+fold 1 done
+fold 2 done
+fold 3 done
+fold 4 done
+  fold 0 gat: PR-AUC 0.159 epochs 46
+  fold 0 ecope_gat: PR-AUC 0.176 epochs 23
+  fold 1 gat: PR-AUC 0.340 epochs 67
+  fold 1 ecope_gat: PR-AUC 0.396 epochs 22
+  fold 2 gat: PR-AUC 0.064 epochs 21
+  fold 2 ecope_gat: PR-AUC 0.114 epochs 94
+  fold 3 gat: PR-AUC 0.082 epochs 23
+  fold 3 ecope_gat: PR-AUC 0.157 epochs 38
+  fold 4 gat: PR-AUC 0.077 epochs 21
+  fold 4 ecope_gat: PR-AUC 0.111 epochs 61
+        model         fset  pr_auc_mean  pr_auc_sd  roc_auc_mean  roc_auc_sd  chance_mean
+0   ecope_gat            A        0.191      0.118         0.802       0.047         0.05
+1         gat            A        0.144      0.116         0.729       0.085         0.05
+2        lgbm            A        0.168      0.090         0.775       0.069         0.05
+3        lgbm           C0        0.421      0.170         0.900       0.032         0.05
+4        lgbm           D0        0.302      0.145         0.720       0.091         0.05
+5        lgbm           E0        0.371      0.154         0.833       0.050         0.05
+6          rf            A        0.154      0.089         0.746       0.095         0.05
+7          rf           C0        0.417      0.136         0.888       0.039         0.05
+8          rf           D0        0.300      0.142         0.719       0.088         0.05
+9          rf           E0        0.350      0.146         0.825       0.060         0.05
+10      score  prior_count        0.301      0.121         0.722       0.086         0.05
+   model comparison   metric  mean_diff  folds_improved                       per_fold_diff  wilcoxon_p pooled_diff_block_boot_CI95
+0   lgbm    E0 - D0   pr_auc     0.0689               5  +0.097 +0.078 +0.068 +0.087 +0.015      0.0625            [+0.001, +0.117]
+1   lgbm    E0 - D0  roc_auc     0.1123               5  +0.197 +0.037 +0.154 +0.167 +0.007      0.0625                            
+2   lgbm     E0 - A   pr_auc     0.2029               5  +0.129 +0.324 +0.248 +0.161 +0.153      0.0625            [+0.124, +0.323]
+3   lgbm     E0 - A  roc_auc     0.0582               5  +0.020 +0.060 +0.063 +0.049 +0.099      0.0625                            
+4   lgbm    C0 - D0   pr_auc     0.1185               4  +0.110 +0.039 +0.167 +0.301 -0.025      0.1250            [+0.001, +0.207]
+5   lgbm    C0 - D0  roc_auc     0.1794               5  +0.266 +0.077 +0.213 +0.228 +0.112      0.0625                            
+6     rf    E0 - D0   pr_auc     0.0509               4  +0.071 +0.041 +0.052 +0.105 -0.015      0.1250            [-0.006, +0.100]
+7     rf    E0 - D0  roc_auc     0.1059               5  +0.142 +0.070 +0.141 +0.151 +0.026      0.0625                            
+8     rf     E0 - A   pr_auc     0.1968               5  +0.136 +0.290 +0.221 +0.195 +0.142      0.0625            [+0.135, +0.319]
+9     rf     E0 - A  roc_auc     0.0783               5  +0.018 +0.077 +0.050 +0.052 +0.195      0.0625                            
+10    rf    C0 - D0   pr_auc     0.1172               5  +0.131 +0.037 +0.122 +0.266 +0.030      0.0625            [+0.026, +0.171]
+11    rf    C0 - D0  roc_auc     0.1689               5  +0.211 +0.088 +0.212 +0.218 +0.117      0.0625                            

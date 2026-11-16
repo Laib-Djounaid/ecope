@@ -17,8 +17,10 @@ def load_config(path: str | Path | None = None) -> dict:
 
 
 def p(cfg: dict, key: str) -> Path:
-    """Resolve a path from cfg['paths'] relative to the repository root."""
-    q = Path(cfg["paths"][key])
+    """Resolve a path from cfg['paths'] relative to the repository root.
+    An environment variable ECOPE_<KEY> (e.g. ECOPE_RESULTS_DIR) overrides it, which is how
+    Colab runs write results and checkpoints to Google Drive."""
+    q = Path(os.environ.get(f"ECOPE_{key.upper()}", cfg["paths"][key]))
     return q if q.is_absolute() else (ROOT / q).resolve()
 
 

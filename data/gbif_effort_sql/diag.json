@@ -1,0 +1,2 @@
+{"sendNotification": false, "format": "SQL_TSV_ZIP",
+ "sql": "SELECT kingdom, kingdomKey, hasCoordinate, hasGeospatialIssues, basisOfRecord, occurrenceStatus, COUNT(*) AS n FROM occurrence WHERE countryCode = 'LU' AND \"year\" = 2020 GROUP BY kingdom, kingdomKey, hasCoordinate, hasGeospatialIssues, basisOfRecord, occurrenceStatus"}

@@ -112,3 +112,8 @@ graph:
       lr: [float, 1.0e-3, 1.0e-2, true]
       weight_decay: [float, 1.0e-6, 1.0e-3, true]
       balanced: [cat, [true, false]]
+
+effort:
+  # Independent effort layer (src/01c_effort_layer.py): GBIF API counts of non-target Fungi.
+  cell_deg: 0.5
+  api_workers: 2
