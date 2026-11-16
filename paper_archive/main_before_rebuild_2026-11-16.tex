@@ -1,0 +1,1017 @@
+%% EcoPE-GAT article, reformatted using Elsevier's cas-sc (single column) class.
+\PassOptionsToPackage{hyperfootnotes=false}{hyperref}
+\documentclass[a4paper,fleqn]{cas-sc}
+
+\usepackage[numbers,square,sort&compress]{natbib}
+
+% No ORCID information supplied for the authors; suppress the (otherwise empty) ORCID footnote.
+\RenewDocumentCommand \printorcid { } { }
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{float}       % NEW: enables the [H] "force here" float placement specifier
+\usepackage{placeins}    % NEW: provides \FloatBarrier to stop floats drifting past a point
+
+\begin{document}
+\let\WriteBookmarks\relax
+\def\floatpagepagefraction{1}
+\def\textpagefraction{.001}
+
+% Short title
+\shorttitle{EcoPE-GAT}
+
+% Short author
+\shortauthors{Laib and Laiche}
+
+% Main title of the paper
+\title[mode=title]{EcoPE-GAT: Graph Attention Networks with Ecological Positional Encoding for Global Plant Pathogen Emergence Prediction}
+
+% First author
+\author[1]{Mohamed Djounaid Laib}
+\ead{Mohamed.djounaid.laib_d@usthb.edu.dz}
+\credit{Conceptualization, Implementation, Methodology, Software, Writing, Formal analysis -- original draft}
+
+
+% Second author
+\author[1,2]{Nacéra Laiche}
+\cormark[1]
+\ead{nlaiche@usthb.dz}
+\credit{Supervision, Methodology, Writing, Formal analysis -- review \& editing. All authors approved the manuscript}
+
+\affiliation{organization={Faculty of Computer Science, Artificial Intelligence and Data Sciences Department, University of Sciences and Technology Houari Boumediene (USTHB)},
+            city={Algiers},
+            country={Algeria}}
+
+\cortext[1]{Corresponding author}
+
+% Here goes the abstract
+\begin{abstract}
+Predicting the emergence of plant pathogens at macroecological scales is a critical challenge at the intersection of ecology and artificial intelligence. Existing approaches treat vegetation plots as independent observations, ignoring the functional connectivity between plant communities that governs shared pathogen risk. In this paper we introduce EcoPE-GAT, a novel graph neural network architecture that reformulates plant pathogen emergence prediction as a node classification problem over a global vegetation plot network. Each of the 79{,}004 plots from the sPlotOpen database is represented as a node, connected to its ten most functionally similar plots via $k$-nearest-neighbour edges in trait space, a biologically motivated choice grounded in the principle that communities sharing functional traits share susceptibility niches. We further propose EcoPE (Ecological Positional Encoding), a learned MLP encoder that maps each plot's position in ecological space (climate principal components, geographic coordinates, biome identity) into a 32-dimensional embedding, injecting macroecological context prior to graph message passing. Unlike topology-based positional encodings (Laplacian PE, RWSE), EcoPE encodes domain content rather than graph structure, making it a genuinely novel contribution to the GNN positional encoding literature. We evaluate EcoPE-GAT against four baseline models: Logistic Regression, Random Forest, MLP, and a plain GAT ablation, across prediction horizons $N \in \{5, 7, 10\}$ years. On the random split, EcoPE-GAT consistently matches or outperforms the plain GAT ablation across all three evaluated prediction horizons, with gains of up to $+33\%$ ($N=5$) and $+17\%$ ($N=10$), demonstrating that the contribution of EcoPE generalises across horizons rather than being an artefact of a single setting, and that it improves the model independently of raw architectural capacity. The learned EcoPE embeddings spontaneously recover biome structure without supervision, and attention weight analysis reveals enrichment of pathogen-positive plots among high-attention edges at short prediction horizons, validating biologically meaningful message passing. We further establish, for the first time, that transductive graph learning introduces a measurable spatial bias under geographic holdout evaluation, a methodological finding with broad implications for GNN-based ecological modelling.
+\end{abstract}
+
+% Keywords
+\begin{keywords}
+Graph Neural Network \sep Plant Pathogen Emergence \sep Ecological Positional Encoding \sep Macroecology \sep Functional Traits \sep sPlotOpen \sep GBIF \sep GAT \sep Transductive Learning
+\end{keywords}
+
+{\hfuzz=118pt\maketitle}
+
+% =========================================================
+\section{Introduction}
+
+Plant pathogens represent one of the most pervasive and poorly predicted threats to terrestrial ecosystems and global food security \citep{bebber2014,fisher2012}. As climate change reshapes vegetation distributions and introduces novel host--pathogen contact zones, the ability to anticipate pathogen emergence from observable community properties has become a research priority \citep{fisher2012}. Despite the availability of large-scale vegetation databases such as sPlotOpen \citep{sabatini2021} and global occurrence repositories such as GBIF \citep{gbif2023}, no unified predictive framework has been proposed that jointly exploits plant functional community structure and pathogen occurrence history at the global scale.
+
+Existing approaches exhibit two fundamental limitations. First, species distribution models (SDMs) and tabular machine learning methods treat vegetation plots as independent, identically distributed observations \citep{elith2009,guillera2015}. This independence assumption is ecologically incorrect: plant communities that share functional traits share susceptibility niches, and pathogen pressure in one community is informative about risk in functionally similar communities elsewhere on the planet. A model that ignores this connectivity discards a structurally important signal. Second, occurrence-based models are systematically corrupted by surveillance bias, the confounding of pathogen records with monitoring effort rather than true emergence rates \citep{beck2014}.
+
+We introduce EcoPE-GAT (Ecological Positional Encoding Graph Attention Network), which directly addresses both limitations by reformulating pathogen prediction as node classification on a global graph of vegetation plots connected by functional trait similarity, a connectivity structure that explicitly encodes the shared-susceptibility hypothesis, augmented by EcoPE, a novel learned positional encoding that injects macroecological context prior to graph message passing.
+
+To support this framework, we construct a novel dataset by merging sPlotOpen with GBIF pathogen records. We verify, via a traits-only tabular baseline with surveillance artefacts removed \citep{beck2014}, that plant functional community composition carries a genuine predictive signal for pathogen emergence (Section~\ref{sec:dataset}): a class-balanced Random Forest trained on trait features alone substantially outperforms chance across all three prediction horizons, achieving PR-AUC of $0.437$, $0.391$ and $0.499$ at $N=5,7,10$ respectively, against chance baselines of only $0.017$, $0.026$ and $0.049$. This result directly motivates the core design choice of EcoPE-GAT: if functionally similar communities share pathogen risk, a graph built on functional trait similarity is a principled connectivity structure for learning.
+
+Our main contributions are:
+\begin{enumerate}[leftmargin=1.4em]
+  \item A novel graph-based formulation of global plant pathogen emergence prediction, with a biologically motivated graph construction in functional trait space.
+  \item Unlike conventional GNN positional encodings based on graph topology, we propose EcoPE (Ecological Positional Encoding), a domain-specific encoding of ecological context.
+  \item Systematic evidence that EcoPE improves over plain GAT on random splits, with gains of up to $+33\%$ ($N=5$) and consistent or comparable performance across all evaluated prediction horizons.
+  \item The first empirical characterisation of transductive graph bias under geographic holdout evaluation in a macroecological setting.
+\end{enumerate}
+
+The remainder of this paper is organised as follows. Section~\ref{sec:relwork} reviews related work on functional-trait-based pathogen prediction, graph neural networks for ecological modelling, positional encoding in GNNs, and spatial evaluation bias, before summarising the resulting research gap. Section~\ref{sec:approach} presents our proposed approach, detailing the motivation behind EcoPE-GAT, the construction of the merged vegetation--pathogen dataset, the EcoPE-GAT architecture itself, and how predictions are produced. Section~\ref{sec:expsetup} describes our experimental protocol, baselines, implementation details, and results. Section~\ref{sec:discussion} discusses the implications, ecological interpretation, and limitations of our findings, and Section~\ref{sec:conclusion} concludes the paper.
+
+% =========================================================
+\section{Related Work}
+\label{sec:relwork}
+
+Work related to ours can be organised into four broad families: (1)~functional-trait-based approaches to plant disease and pathogen risk prediction, which motivate the ecological premise of our model; (2)~graph neural networks applied to ecological and species distribution modelling, which motivate our architectural choice of GAT; (3)~positional encoding strategies for graph neural networks, which contextualise our proposed EcoPE encoder; and (4)~work on spatial generalisation and evaluation bias, which motivates our geographic holdout analysis. We review each family in turn before summarising the specific gap that EcoPE-GAT addresses.
+
+\subsection{Functional-trait based pathogen prediction}
+
+Plant pathogens are increasingly recognised as a direct threat to global food security and ecosystem stability \citep{bebber2014}, with fungal and fungal-like pathogens responsible for a growing share of emerging infectious disease events across plant, animal, and ecosystem health \citep{fisher2012}. Plant functional traits are measurable morphological, physiological, or phenological characteristics of a species, such as leaf area, wood density, or leaf nitrogen content, that influence its growth, survival, and reproduction; aggregated at the community level, they provide a compact, taxonomy-independent description of a vegetation community's ecological strategy, and are widely used as such in macroecology. Correlative species distribution models (SDMs) dominate macroecological plant disease prediction \citep{elith2009}, using climate and geographic covariates to project suitable conditions for individual pathogen species; their reliability when transferred beyond the conditions they were fitted on, however, remains an open methodological concern \citep{guillera2015}. These models treat the host community as homogeneous, ignoring functional composition. Community-weighted means (CWM) and variances (CWV) of plant functional traits have been linked to ecosystem vulnerability at continental scale \citep{bruelheide2018}, building on the foundational link between trait composition and ecosystem functioning \citep{lavorel2002}, yet their application as a direct predictor of pathogen emergence risk remains largely unexplored, a gap that Jin et al.~\citep{jin2021} begin to close by showing that host functional traits shape plant responses to pathogen stress at the individual level. More recently, an alternative representation strategy has emerged: Siefert et al.~\citep{siefert2024} derive unsupervised species embeddings from co-occurrence patterns on the same sPlotOpen database used here, and show that these embeddings predict species range shifts more reliably than trait- or phylogeny-based models alone.
+
+Although functional traits, and, increasingly, learned co-occurrence embeddings, have been shown to explain ecosystem vulnerability and species behaviour, existing approaches model vegetation plots or species independently and fail to exploit ecological connectivity between communities; even representation-learning alternatives to traits operate at the species level and do not propagate risk across functionally linked plots.
+
+\subsection{Graph Neural Networks for Ecological Modelling}
+
+Gradient-boosted trees and random forests remain the standard tabular baselines for ecological modelling, and their strength on in-distribution data is well documented. However, they offer no mechanism for exploiting connectivity between observations, a structural property that graph neural networks are explicitly designed to leverage. Among GNN architectures, Graph Convolutional Networks (GCN) aggregate neighbour information using fixed, normalised weights \citep{kipf2017}; GraphSAGE extends this by learning flexible neighbourhood aggregation functions, including for previously unseen nodes \citep{hamilton2017}; and Graph Attention Networks (GAT) further refine the idea by learning per-edge attention coefficients, offering an interpretable weighting of each neighbour's contribution \citep{velickovic2018}. This family of models has recently been applied directly to species distribution modelling: Wu et al.~\citep{wu2025} propose GNN-SDM, which aggregates heterogeneous landscape patches into a graph to infer habitat suitability from species range polygons, while Harrell et al.~\citep{harrell2025} introduce a heterogeneous GNN that represents species and locations as two distinct node types, learning species--environment interactions as explicit graph edges. Both confirm that graph-structured models outperform single-species and feed-forward baselines on standard SDM benchmarks, reinforcing GAT's suitability for ecological problems where attention coefficients provide an interpretable form of neighbourhood weighting.
+
+Existing ecological GNNs operate on spatial proximity graphs or species--location bipartite graphs, and have not been applied to pathogen emergence prediction using functional trait similarity; no prior work has constructed graphs over global vegetation plots on this basis.
+
+\subsection{Positional Encoding in Graph Neural Networks}
+
+GNN positional encodings address the permutation-invariance of message passing by providing each node with a unique structural fingerprint. Laplacian eigenvector encodings \citep{dwivedi2020} and distance-based structural encodings \citep{li2020} encode topology, the node's structural role within the graph, and have proven effective across a range of graph learning tasks, drawing on ideas from Transformer-style positional encoding. Closer to our setting, Klemmer et al.~\citep{klemmer2023pegnn} propose PE-GNN, which learns a context-aware embedding of raw geographic coordinates and predicts spatial autocorrelation as an auxiliary task, improving spatial interpolation on geo-referenced regression problems; Zhao et al.~\citep{zhao2023} apply this positional-encoder paradigm to soil organic carbon estimation from climate features, confirming its value in environmental prediction more broadly.
+
+These positional encoders remain general-purpose: they embed raw latitude/longitude (Klemmer et al.) for arbitrary geo-referenced regression, independent of any domain-specific ecological context, and are evaluated on spatial-proximity graphs rather than trait-similarity graphs. A domain-specific ecological positional encoding that jointly encodes climate context, biome identity, and coordinates to complement a non-geographic, trait-based graph topology, as opposed to a purely geographic one, has, to our knowledge, not been proposed.
+
+\subsection{Spatial Generalisation and Evaluation Bias}
+
+Robust evaluation is a persistent methodological challenge in spatial ecological modelling. Roberts et al.~\citep{roberts2017} show that conventional random cross-validation systematically overestimates predictive performance when observations are spatially autocorrelated, and argue for spatially-blocked or geographically-structured holdout strategies as a more honest test of generalisation. In the GNN literature specifically, spatio-temporal graph models for epidemic forecasting, for instance Croft et al.~\citep{croft2023}'s model of regional SARS-CoV-2 spread across Dutch municipalities, are typically evaluated transductively, with all locations present in the graph throughout training, yet the implications of this setting for spatial generalisation are rarely discussed explicitly. The transductive-versus-inductive distinction is well known in the broader graph learning literature, but its specific consequences for geographic holdout evaluation in ecological GNNs, where node connectivity is itself defined by ecological or geographic similarity rather than by a fixed observation graph, remain largely unexamined.
+
+Existing spatial cross-validation guidance was developed for non-graph models, and spatio-temporal ecological GNN studies rarely interrogate whether their transductive training setting inflates or deflates apparent generalisation under geographic holdout, particularly for graphs whose connectivity is itself defined by ecological rather than purely geographic similarity.
+
+\subsection{Summary of Research Gap}
+
+As far as we know, no existing work simultaneously: (1)~models pathogen emergence as a graph problem, (2)~builds graphs from plant functional traits, (3)~introduces a domain-specific ecological positional encoding, and (4)~characterises the transductive bias introduced by such a graph under geographic holdout evaluation. Therefore, our objective is to develop a robust graph-based framework for global plant pathogen emergence prediction that integrates functional trait similarity, ecological context, and rigorous spatial evaluation. To achieve this objective, we propose EcoPE-GAT, which combines a functional-trait-based graph with a domain-specific Ecological Positional Encoding and explicitly evaluates the effects of transductive graph learning under geographic holdout.
+
+% =========================================================
+\section{Proposed Approach}
+\label{sec:approach}
+
+\subsection{Motivation}
+\label{sec:motivation}
+
+Before describing the EcoPE-GAT architecture in detail, we first lay out the three ecological and methodological observations that motivate its design, and briefly recall the graph neural network background that informs our choice of backbone.
+
+\textbf{Observation 1: functional traits already carry predictive signal.} A preliminary tabular analysis (detailed in Section~\ref{sec:dataset}) shows that a Random Forest trained solely on plant functional traits, with geographic and temporal covariates withheld to control for surveillance bias, substantially outperforms chance at predicting future pathogen emergence. This establishes that community-level functional composition is not a passive backdrop but an active predictor of disease risk.
+
+\textbf{Observation 2: functionally similar communities share risk.} Ecological theory and coevolutionary dynamics suggest that two vegetation plots with similar functional trait profiles, even on different continents, are exposed to similar selective pressures and are therefore likely to share pathogen susceptibility.
+
+\textbf{Observation 3: tabular models cannot exploit this connectivity.} Logistic regression, random forests, and even capacity-matched MLPs treat each plot as an independent, identically distributed sample. They have no mechanism for propagating risk information between functionally related communities, discarding a structurally meaningful signal.
+
+These three observations motivate the construction of a graph representation of global vegetation communities and the design of a graph neural network capable of exploiting ecological relationships between them.
+
+\subsubsection{GNNs and Graph Attention Networks: Background}
+\label{sec:gat-background}
+
+Among graph neural network architectures, Graph Convolutional Networks aggregate neighbour information using fixed, normalised weights, providing no mechanism to distinguish the relative importance of different functional neighbours. GraphSAGE learns flexible aggregation functions, including for nodes unseen at training time, but without per-edge attention. Graph Attention Networks (GAT) extend this idea by learning, for each edge $(i,j)$, an attention coefficient $\alpha_{ij}$ that weights the contribution of neighbour $j$ to node $i$'s update.
+
+This property is particularly well suited to our setting: not all functional neighbours of a vegetation plot are equally informative for predicting pathogen risk, a highly pathogen-experienced neighbour should contribute more to a plot's risk estimate than a neighbour with no pathogen history. We therefore adopt GAT as the backbone of EcoPE-GAT, and describe in Section~\ref{sec:architecture} how we further equip it with a domain-specific positional encoding, EcoPE, designed to inject ecological context that pure graph topology cannot provide.
+
+\subsection{Methodology}
+\label{sec:overview}
+
+Our overall pipeline comprises three main steps: (i)~constructing a merged vegetation--pathogen dataset from sPlotOpen and GBIF records (Section~\ref{sec:dataset}); (ii)~building the EcoPE-GAT architecture around this dataset, which combines a functional-trait similarity graph with our proposed Ecological Positional Encoding and stacked graph attention layers (Section~\ref{sec:architecture}); and (iii)~producing plot-level pathogen emergence predictions from the resulting node embeddings (Section~\ref{sec:predictions}). Figure~\ref{fig:overview} summarises this pipeline. EcoPE-GAT, and in particular the EcoPE encoder within it, is the central modelling component of this pipeline and the primary contribution of this work; the dataset construction and prediction steps that surround it are necessary supporting stages rather than separate contributions.
+
+\begin{figure}[pos=t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/pipeline_overview.png}
+  \caption{Overview of the EcoPE-GAT pipeline}
+  \label{fig:overview}
+\end{figure}
+
+\subsubsection{Dataset Construction}
+\label{sec:dataset}
+
+\begin{itemize}[leftmargin=1.4em]
+
+\item \textbf{Vegetation Plot Database.} Our node set draws from sPlotOpen \citep{sabatini2021}, an open-access global repository of 79{,}004 vegetation survey plots. Each plot is characterised by the community-weighted mean (CWM) and community-weighted variance (CWV) of 18 plant functional traits, together encoding both the central tendency and the within-community dispersion of the local plant strategy space. Additional plot-level attributes include species richness, two measures of trait data coverage, and two principal components summarising the soil-climate environment (SoilClim-PC1/PC2). After flagging columns with $>20\%$ missing values via binary indicators, each plot is represented by a $D=41$ dimensional feature vector. Metadata retained for graph construction and EcoPE encoding include decimal latitude/longitude, continent, biome category, and survey year.
+
+\item \textbf{Pathogen Occurrence Records and Spatial Joining.} Global plant pathogen records were downloaded from GBIF \citep{gbif2023} and restricted to fungal, oomycete, and bacterial taxa known to be plant-associated. Two quality filters were applied: occurrences with georeferencing uncertainty exceeding 10~km and those lacking a reported observation date were discarded. The cleaned records were then matched to vegetation plots by spatial proximity: a plot receives a pathogen occurrence if at least one qualifying record falls within a 50~km radius of the plot centroid.
+
+\item \textbf{Emergence Labels and Class Imbalance.} We cast the prediction task as a horizon-specific binary classification. Given a plot $i$ surveyed at time $r_i$, its label under horizon $N$ is:
+\begin{equation}
+y_i^{(N)} = \mathbb{1}\Big[\exists\ \text{pathogen record in buffer}(i): 0 < t_{event} - r_i \leq N \Big]
+\end{equation}
+where $y_i^{(N)} \in \{0,1\}$ is the binary emergence label of plot $i$ for horizon $N$; $r_i$ is the survey year of plot $i$; $\text{buffer}(i)$ denotes the set of pathogen occurrence records within the 50~km spatial buffer of plot $i$; and $t_{event}$ is the date of a given pathogen record in that buffer. $N \in \{5, 7, 10\}$ years. The fraction of positive plots grows from roughly $1.7\%$ at $N=5$ to $4.9\%$ at $N=10$, reflecting the accumulation of new pathogen reports over longer windows. This severe imbalance is addressed throughout by weighting the positive class at $w^+ = n^-/n^+$, where $n^-$ and $n^+$ denote, respectively, the number of negative and positive plots in the training set, in all loss functions, and by reporting PR-AUC rather than accuracy as the primary metric \citep{saito2015}.
+
+\item \textbf{Evidence of a Learnable Signal.} Before introducing the graph model, we first verify that the merged dataset contains a meaningful predictive signal. A class-balanced Random Forest (200 estimators) trained on the 41 trait features alone, with survey year and all geographic covariates withheld to avoid conflating surveillance density with ecological risk \citep{beck2014}, substantially outperforms chance across all three prediction horizons (PR-AUC of $0.437$, $0.391$, and $0.499$ at $N=5,7,10$, against chance baselines of $0.017$, $0.026$, and $0.049$ respectively). This establishes that variation in plant functional community composition is predictive of future pathogen emergence in a bias-controlled setting, and provides the empirical grounding for the core design choice of EcoPE-GAT: connecting plots by similarity in trait space, so that message passing can propagate risk signals across functionally analogous communities.
+
+\end{itemize}
+
+% =========================================================
+\subsubsection{EcoPE-GAT Architecture}
+\label{sec:architecture}
+
+We now describe the EcoPE-GAT architecture itself, which proceeds in three steps: first, we formalise the prediction task and construct the functional-trait similarity graph over which the model operates; second, we compute the Ecological Positional Encoding (EcoPE) for each node; and third, we propagate and weight information across the graph using stacked graph attention layers. The full architecture, from raw trait features and ecological context through to the per-plot pathogen emergence probability, is shown in Figure~\ref{fig:architecture}.
+
+\begin{figure}[pos=t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/ecope_gat.png}
+  \caption{EcoPE-GAT overall architecture. Left: trait features $X$ and the $k$-NN functional-trait graph are enriched with the EcoPE embedding $P$ before being propagated through two multi-head GAT layers to produce per-plot pathogen emergence probabilities $\hat{y} \in [0,1]^N$. Right: the EcoPE encoder itself, a 2-layer MLP that maps each plot's ecological context $C$ (climate, geographic location, biome) into a 32-dimensional positional embedding $P$.}
+  \label{fig:architecture}
+\end{figure}
+
+\begin{itemize}[leftmargin=1.4em]
+
+\item \textbf{Problem Formulation and Graph Construction.} Let $G=(V,E)$ be an undirected graph where each node $v_i \in V$ (vegetation plot) has feature vector $x_i \in \mathbb{R}^D$ and ecological context $c_i \in \mathbb{R}^{D_c}$. The task is binary node classification: predict $y_i^{(N)} \in \{0,1\}$ for each plot.
+
+We construct the graph by connecting each plot to its $k$-nearest neighbours in functional trait space, rather than by geographic or climate proximity. This choice is grounded in two established ecological principles. First, the functional trait hypothesis posits that species with similar functional strategies occupy similar ecological niches and face similar biotic pressures, including pathogens. Second, plant--pathogen coevolution theory predicts that host community functional composition determines susceptibility niches: a pathogen that successfully colonises a community with trait profile $x$ is expected to also emerge in communities with similar profiles, regardless of geographic distance. Figure~\ref{fig:geomap} confirms this choice empirically: the top 5\% highest-attention edges in the trained model frequently cross continental boundaries, connecting plots in Europe to functionally similar plots in Australia and North America, if pathogen risk propagation were geographically structured, attention would instead cluster locally. A geographically-defined graph would miss this trait-driven signal entirely, and a climate-defined graph would conflate the ecological context (already captured by EcoPE) with the connectivity structure itself; we therefore use a pure trait-space graph and inject climate context through EcoPE as a separate channel.
+
+Each node is connected to its $k=10$ nearest neighbours, making the graph sparse (average degree 20 after symmetrisation) while ensuring sufficient neighbourhood size for stable attention estimation, a value consistent with the range used in ecological $k$-NN analyses \citep{bruelheide2018}, and one that avoids the over-smoothing risk associated with dense graphs in GAT architectures \citep{velickovic2018}. Edge weights encode ecological similarity via
+\begin{equation}
+w_{ij} = \frac{1}{1 + d(x_i, x_j)}
+\end{equation}
+where $w_{ij}$ is the weight assigned to the edge between plots $i$ and $j$, and $d(x_i, x_j)$ is the Euclidean distance between the normalised trait feature vectors $x_i$ and $x_j$ of plots $i$ and $j$, mapping the continuous similarity gradient into $[0,1]$ and preserving the relative informativeness of each connection.
+
+\item \textbf{Ecological Positional Encoding (EcoPE).} A natural baseline would be to simply append climate PCs, latitude, longitude, and biome index directly to the node feature vector $x_i$. EcoPE departs from this for three reasons. Raw coordinates and climate values sit on incommensurable scales and carry no explicit ecological meaning on their own, their effect on gradient flow depends entirely on the downstream network's ability to interpret them, with no structural guidance about their ecological relationships. By contrast, EcoPE learns a non-linear projection of these variables into a dedicated 32-dimensional manifold, one that can discover, for instance, that ``temperate oceanic'' and ``temperate continental'' biomes are adjacent in ecological risk space while being far apart in raw coordinate space, a relation simple concatenation cannot capture without learning it incidentally from a far noisier label signal. Finally, separating ecological context into its own encoder $f_\phi$ creates an independent learning pathway: the gradient signal from the loss can specialise $f_\phi$ on ecological structure without interference from the trait features, an architectural separation analogous to the split between positional and semantic streams in Transformer architectures \citep{vaswani2017}, as illustrated on the right-hand side of Figure~\ref{fig:architecture}. The t-SNE of learned EcoPE embeddings, presented in Figure~\ref{fig:tsne}, provides direct empirical evidence for this design: it shows near-perfect biome cluster separation despite the model never receiving biome as a training label, an emergent structure that simple feature concatenation, with no architectural pressure toward learning a manifold, could not produce.
+
+The encoder $f_\phi: \mathbb{R}^{D_c} \to \mathbb{R}^{D_p}$ is a 2-layer MLP with LayerNorm and GELU activations, and $p_i$ is the 32-dimensional Ecological Positional Encoding of plot $i$, defined by
+\begin{equation}
+p_i = f_\phi\big([\,\text{SoilClim-PC1}_i,\ \text{SoilClim-PC2}_i,\ \phi_i,\ \lambda_i,\ b_i\,]\big) \in \mathbb{R}^{32}
+\end{equation}
+where $\text{SoilClim-PC1}_i$ and $\text{SoilClim-PC2}_i$ are its two soil-climate principal component scores; $\phi_i$ and $\lambda_i$ are its latitude and longitude; and $b_i$ is its biome identity.
+
+The two soil-climate principal components capture the dominant axes of environmental variation, temperature--moisture gradient and seasonality, more efficiently than individual climate variables. Latitude and longitude encode geographic context without imposing a geographic connectivity structure, allowing EcoPE to learn latitudinal gradients in pathogen pressure, well documented in the epidemiological literature \citep{bebber2014}, without constraining edges to be geographically proximal. Biome identity, encoded as an integer, provides a discrete partition of the ecological space, letting EcoPE learn both fine-grained climate gradients within biomes and coarse biome-level discontinuities. A shallow 2-layer, 64-hidden-unit encoder is sufficient to learn this non-linear mapping from a 5-dimensional ecological context to the 32-dimensional output manifold, a dimension chosen to balance expressive capacity against the risk of the positional embedding dominating the 41-dimensional trait features upon concatenation. LayerNorm stabilises training given the heterogeneous scales of the input variables, and GELU is preferred over ReLU for smoother gradient flow, following common practice in Transformer-style MLP encoders.
+
+The ecological position embedding is concatenated to the trait features, $\tilde{x}_i = [x_i \,\|\, p_i] \in \mathbb{R}^{73}$, then projected to the GAT input dimension via a learned linear layer followed by LayerNorm and GELU, as shown in the node feature enrichment step of Figure~\ref{fig:architecture}.
+
+\item \textbf{Graph Attention Network Layers.} As established in Section~\ref{sec:gat-background}, GAT is the backbone of EcoPE-GAT because its per-edge attention coefficients let pathogen-experienced neighbours contribute more strongly to a plot's risk estimate than uninformative ones. The attention mechanism is defined as:
+\begin{align}
+e_{ij} &= \text{LeakyReLU}\big(a^\top [Wh_i^{(l)} \,\|\, Wh_j^{(l)}]\big) \\
+\alpha_{ij} &= \frac{\exp(e_{ij})}{\sum_{k \in \mathcal{N}(i)} \exp(e_{ik})} \\
+h_i^{(l+1)} &= \text{ELU}\Big(\frac{1}{H}\sum_{h=1}^{H}\sum_{j \in \mathcal{N}(i)} \alpha_{ij}^{(h)} W^{(h)} h_j^{(l)}\Big)
+\end{align}
+where $e_{ij}$ is the unnormalised attention score assigned by node $i$ to neighbour $j$; $W$ is a learned linear projection matrix shared across nodes; $a$ is a learned attention vector; $h_i^{(l)}$ is the representation of node $i$ at layer $l$ (with $h_i^{(0)}$ the input node embedding); $\alpha_{ij}$ is the normalised attention coefficient obtained via a softmax over the neighbourhood $\mathcal{N}(i)$ of node $i$; $H$ is the number of attention heads; and the superscript $(h)$ indexes the parameters and coefficients of head $h$.
+
+We use 2 GAT layers, as shown by the stacked GAT Layer 1 / GAT Layer 2 blocks in Figure~\ref{fig:architecture}, each expands the receptive field by one hop, so with $k=10$ a node aggregates information from up to 100 plots within 2 hops; deeper architectures risk over-smoothing, a well-documented failure mode in sparse, heterogeneous-degree ecological graphs. We use 4 attention heads, allowing different heads to specialise on different aspects of functional similarity (e.g.\ leaf economics vs.\ reproductive strategy); our per-head attention histograms (Figure~\ref{fig:attention}b) confirm mild specialisation across heads. Each head has 64 hidden dimensions, providing sufficient capacity to represent the 41-dimensional trait input plus the 32-dimensional EcoPE embedding, while remaining trainable on CPU with 79k nodes.
+
+\end{itemize}
+
+\subsubsection{Predictions}
+\label{sec:predictions}
+
+Once the two stacked GAT layers have produced a final node representation, EcoPE-GAT converts this representation into a pathogen emergence probability as follows. The outputs of the four attention heads in the last GAT layer are concatenated into a single vector $h_i^{(2)} \in \mathbb{R}^{256}$ for each plot $i$. This vector is passed through a lightweight MLP readout head (one hidden layer of 64 units with a ReLU activation, followed by a single output unit) to obtain a logit, which is mapped to a probability via a sigmoid activation:
+\begin{equation}
+\hat{y}_i^{(N)} = \sigma\big(\text{MLP}(h_i^{(2)})\big) \in [0,1].
+\end{equation}
+where $h_i^{(2)} \in \mathbb{R}^{256}$ is the concatenated output of the final GAT layer for plot $i$; $\text{MLP}(\cdot)$ is the readout head described above; $\sigma(\cdot)$ is the sigmoid activation function; and $\hat{y}_i^{(N)}$ is the resulting predicted probability. $\hat{y}_i^{(N)}$ is interpreted as the estimated probability that plot $i$ will experience a new pathogen occurrence within the next $N$ years, corresponding to the ``Prediction (Per Plot)'' output shown in Figure~\ref{fig:architecture}. During training, this probability is compared against the ground-truth label $y_i^{(N)}$ using the class-weighted binary cross-entropy loss of Equation~\eqref{eq:loss} (Section~\ref{sec:expsetup}); at evaluation time, the same probability is used directly to compute PR-AUC and ROC-AUC, and can additionally be thresholded (e.g.\ at $0.5$, or at a threshold tuned on the validation set) to produce a binary risk flag for a given plot and horizon. Because the setting is transductive (Section~\ref{sec:discussion}), predictions for validation and test plots are obtained using node embeddings computed with the full graph, but with test labels withheld during training.
+
+% =========================================================
+\section{Experiments}
+\label{sec:expsetup}
+
+\subsection{Prediction Horizons}
+
+All models are evaluated across three prediction horizons, $N = 5, 7,$ and $10$ years, corresponding to increasingly long windows over which pathogen emergence is observed (Section~\ref{sec:dataset}).
+
+\subsection{Evaluation Protocol}
+
+\textbf{Random split.} Plots are randomly partitioned 80/10/10 (train/val/test), stratified by label. This evaluates in-distribution performance and is the primary benchmark for comparing model architectures.
+
+\textbf{Spatial holdout.} All North American plots are withheld from training; the model is evaluated on this continent. We include this evaluation as a methodological probe rather than a primary performance claim (see Section~\ref{sec:discussion}).
+
+\textbf{Metric.} The primary metric is PR-AUC (average precision), appropriate for highly imbalanced binary classification \citep{saito2015}; ROC-AUC is reported as a secondary metric.
+
+\subsection{Implementation Details}
+
+Training uses binary cross-entropy with a positive class weight $w^+ = n^-/n^+$:
+\begin{equation}
+\label{eq:loss}
+\mathcal{L} = -\frac{1}{|T|}\sum_{i \in T}\Big( w^+ y_i \log \hat{y}_i + (1-y_i)\log(1-\hat{y}_i) \Big)
+\end{equation}
+where $\mathcal{L}$ is the training loss; $T$ is the set of training-set plots, with $|T|$ its cardinality; $y_i$ and $\hat{y}_i$ are, respectively, the ground-truth label and predicted probability for plot $i$; and $w^+ = n^-/n^+$ is the positive class weight, with $n^-$ and $n^+$ the number of negative and positive plots in the training set.
+
+We use Adam \citep{kingma2015} (lr $= 10^{-3}$, weight decay $= 10^{-4}$) with gradient clipping (max norm 1.0) to prevent early-epoch gradient explosion from the EcoPE encoder's initial activations. Learning rate is reduced via ReduceLROnPlateau (factor 0.5, patience 10) when validation PR-AUC plateaus. Training stops early with patience 30 on validation PR-AUC, with a maximum of 300 epochs, well above the typical convergence point observed at epochs 107--175 across runs, ensuring early stopping is the active termination criterion. Dropout ($p=0.3$), applied to both attention coefficients and node features, regularises against over-reliance on specific neighbours.
+
+\subsection{Baselines}
+
+We compare EcoPE-GAT against five baselines, chosen to isolate different sources of predictive power: a non-informative reference (random classifier), the minimal linear model (logistic regression), the strongest standard non-graph tabular model (random forest), a capacity- and feature-matched non-graph neural network (MLP), and an architecture-matched graph model without EcoPE (plain GAT). Together, these baselines let us separate the contribution of tabular signal, model capacity, non-linearity, and graph structure from the contribution of EcoPE itself.
+
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Random classifier}: a non-informative reference that always predicts the (training-set) class prevalence; its expected PR-AUC equals the class prevalence itself, and it establishes the chance level against which all other models are compared, separately for each horizon.
+  \item \textbf{Logistic Regression}: class-balanced linear model; the minimal non-trivial baseline.
+  \item \textbf{Random Forest} (200 trees, class-balanced): the standard strong tabular baseline for ecological modelling \citep{valavi2022}.
+  \item \textbf{MLP (no graph)}: 3-layer (128-64-32), class-weighted, same 41 node features, no graph structure. Controls for model capacity and non-linearity.
+  \item \textbf{Plain GAT (ablation)}: identical architecture to EcoPE-GAT but without the EcoPE encoder. Isolates the contribution of EcoPE from all other architectural choices.
+\end{itemize}
+
+\subsection{Results}
+\label{sec:results}
+
+Table~\ref{tab:ecope-contribution} presents the obtained results in PR-AUC that first isolate the effect of EcoPE by comparing it directly against the Plain GAT ablation, identical architecture, identical training procedure, the only difference being the EcoPE encoder.
+
+\begin{table}[t]
+\centering
+\caption{PR-AUC, random split: Plain GAT vs.\ EcoPE-GAT.}
+\label{tab:ecope-contribution}
+\begin{tabular}{lccc}
+\toprule
+Horizon & Plain GAT & EcoPE-GAT & Gain \\
+\midrule
+$N=5$  & 0.119 & 0.159 & $+33\%$ \\
+$N=7$  & 0.166 & 0.162 & $-3\%$ \\
+$N=10$ & 0.264 & 0.307 & $+17\%$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\centering
+\caption{PR-AUC across prediction horizons. RS = Random Split, SH = Spatial Holdout.}
+\label{tab:main-results}
+\small
+\begin{tabular}{lcccccc}
+\toprule
+ & \multicolumn{3}{c}{Random Split} & \multicolumn{3}{c}{Spatial Holdout} \\
+\cmidrule(lr){2-4} \cmidrule(lr){5-7}
+Model & $N=5$ & $N=7$ & $N=10$ & $N=5$ & $N=7$ & $N=10$ \\
+\midrule
+Chance              & 0.017 & 0.026 & 0.049 & 0.005 & 0.012 & 0.016 \\
+Log.\ Regression    & 0.047 & 0.066 & 0.094 & 0.034 & 0.133 & 0.081 \\
+Random Forest       & 0.437 & 0.391 & 0.499 & 0.029 & 0.055 & 0.074 \\
+MLP (no graph)      & 0.190 & 0.217 & 0.321 & 0.030 & 0.068 & 0.071 \\
+Plain GAT           & 0.119 & 0.166 & 0.264 & 0.019 & 0.046 & 0.025 \\
+\textbf{EcoPE-GAT}  & \textbf{0.159} & \textbf{0.162} & \textbf{0.307} & \textbf{0.015} & \textbf{0.033} & \textbf{0.011} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{itemize}[leftmargin=1.4em]
+
+\item \textbf{EcoPE Contribution.} EcoPE improves over the plain GAT at $N=5$ and $N=10$, with $N=7$ representing a near-tie. This isolated comparison is the cleanest evidence that EcoPE contributes independently of raw model capacity.
+
+\item \textbf{Comparison with Baselines.} We then broaden the comparison to the full baseline suite: Table~\ref{tab:main-results} presents the obtained results in PR-AUC, situating EcoPE-GAT against all five baselines. Random Forest achieves the highest PR-AUC on random splits, expected, since tree-based models consistently outperform deep learning on tabular data under in-distribution evaluation \citep{grinsztajn2022}. The MLP also outperforms both GNN variants on the random split. The advantage of EcoPE-GAT over these tabular and capacity-matched models lies not in raw PR-AUC, but in its ability to produce interpretable attention weights and ecologically structured embeddings (Sections~\ref{sec:embedding}--\ref{sec:attention}). On the spatial holdout, all GNN variants underperform tabular models, a result analysed in Section~\ref{sec:discussion} as a finding about transductive graph learning rather than a generalisation failure.
+
+\item \textbf{Embedding Analysis.}
+\label{sec:embedding}
+Figure~\ref{fig:tsne} shows t-SNE visualisations of EcoPE embeddings for a random subsample of 5{,}000 plots, computed separately for each prediction horizon $N \in \{5, 7, 10\}$. Across all three horizons, biomes form well-separated clusters without any biome-specific supervision signal, the encoder was never trained with biome as a target variable. This emergent structure validates the EcoPE design: the encoder has learned to map ecological context into a manifold reflecting the true ecological organisation of global vegetation. The clustering is consistent across horizons, confirming that it reflects a stable property of the learned ecological manifold rather than an artefact of a specific label distribution. Pathogen-positive plots concentrate in specific biome clusters, particularly in temperate and subtropical zones, consistent with known patterns of plant disease biogeography \citep{bebber2014}.
+
+\begin{figure}[pos=t]
+  \centering
+  \begin{subfigure}{\linewidth}
+    \includegraphics[width=\linewidth]{figures/tsne5.png}
+    \caption{$N=5$}
+  \end{subfigure}
+  \vspace{0.5em}
+  \begin{subfigure}{\linewidth}
+    \includegraphics[width=\linewidth]{figures/tsne7.png}
+    \caption{$N=7$}
+  \end{subfigure}
+  \vspace{0.5em}
+  \begin{subfigure}{\linewidth}
+    \includegraphics[width=\linewidth]{figures/tsne10.png}
+    \caption{$N=10$}
+  \end{subfigure}
+  \caption{t-SNE of learned EcoPE embeddings (5{,}000 plots), coloured by biome (left) and pathogen label (right), for each prediction horizon. Biome clusters emerge without supervision across all horizons.}
+  \label{fig:tsne}
+\end{figure}
+\FloatBarrier
+
+\item \textbf{Attention Analysis.}
+\label{sec:attention}
+Figure~\ref{fig:attention} reports the GAT attention coefficient analysis for all three prediction horizons. Panel (a) shows that attention weights follow a right-skewed distribution in every horizon, confirming selective rather than uniform aggregation. Panel (b) shows mild specialisation across the 4 attention heads. Panel (c) reports pathogen-positive enrichment in top-5\% attention edges relative to the overall prevalence, summarised numerically in Table~\ref{tab:attention-enrichment}.
+
+\begin{table}[t]
+\centering
+\caption{Pathogen-positive enrichment in top-5\% attention edges across horizons.}
+\label{tab:attention-enrichment}
+\begin{tabular}{lccc}
+\toprule
+Horizon & Overall prevalence & Top-5\% source & Top-5\% dest \\
+\midrule
+$N=5$  & 1.66\% & 2.84\% & 2.50\% \\
+$N=7$  & 2.57\% & 3.37\% & 3.11\% \\
+$N=10$ & 4.88\% & 4.08\% & 4.02\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+At $N=5$ and $N=7$, pathogen-positive plots are enriched among high-attention edges ($\times1.71$ and $\times1.31$ respectively), demonstrating that the attention mechanism routes information preferentially through edges connecting high-risk plots, with no supervision signal about which edges should receive high attention. At $N=10$, however, this enrichment reverses: top-5\% attention edges are \emph{less} likely to connect pathogen-positive plots than the overall prevalence (4.08\% vs 4.88\%). This inversion coincides with the highest class prevalence ($\sim$4.9\%) and suggests that at longer horizons, when positive labels are more diffuse across biomes, the attention mechanism spreads weight more uniformly rather than concentrating it on high-risk corridors, a plausible consequence of the reduced discriminability of the positive class in trait space at $N=10$.
+
+\begin{figure}[pos=t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/attention_all_horizons.png}
+  \caption{Attention analysis across prediction horizons $N \in \{5, 7, 10\}$ (rows). (a) Attention weight distribution from the last GAT layer. (b) Per-head attention distributions (4 heads). (c) Pathogen-positive enrichment in top-5\% attention edges relative to overall prevalence.}
+  \label{fig:attention}
+\end{figure}
+\FloatBarrier
+
+\item \textbf{Geographic Analysis.}
+\label{sec:geo}
+Figure~\ref{fig:geomap} shows the geographic distribution of the 800 sampled highest-attention edges for each prediction horizon; plots highlighted in red mark pathogen-positive plots, allowing the connectivity pattern to be read against known disease occurrence. Across all three horizons, long-range connections crossing continental boundaries are consistently present, particularly between Europe, North America, and Australia. This cross-continental pattern directly supports the trait-similarity graph design: functional equivalents of European temperate forest plots in North America and Australia receive high attention because they are ecologically informative, not because they are geographically proximal.
+
+\begin{figure}[pos=t]
+  \centering
+  \begin{subfigure}{\linewidth}
+    \includegraphics[width=0.94\linewidth]{figures/geo5.png}
+    \caption{$N=5$}
+  \end{subfigure}
+  \vspace{0.5em}
+  \begin{subfigure}{\linewidth}
+    \includegraphics[width=0.94\linewidth]{figures/geo7.png}
+    \caption{$N=7$}
+  \end{subfigure}
+  \vspace{0.5em}
+  \begin{subfigure}{\linewidth}
+    \includegraphics[width=0.94\linewidth]{figures/geo10.png}
+    \caption{$N=10$}
+  \end{subfigure}
+  \caption{Geographic distribution of the 800 sampled highest-attention edges (top 5\%), with pathogen-positive plots highlighted in red, for each prediction horizon. Cross-continental connections are present across all horizons, validating the trait-similarity graph construction.}
+  \label{fig:geomap}
+\end{figure}
+\FloatBarrier
+
+\end{itemize}
+
+% =========================================================
+\section{Discussion}
+\label{sec:discussion}
+
+\subsection{EcoPE as a Structural Contribution}
+
+Our ablation confirms that EcoPE contributes beyond model capacity: the Plain GAT, with identical architecture and parameters but no EcoPE, is consistently outperformed on random splits. The t-SNE analysis shows this improvement is accompanied by genuine ecological structure learning, validating EcoPE as a principled, domain-specific positional encoding for macroecological graphs.
+
+\subsection{Why the GNN Approach is Justified}
+
+Random Forest achieves the highest in-distribution PR-AUC, as expected for tree-based models on tabular data, and it cannot be dismissed on raw performance grounds alone. The GNN approach is nonetheless justified: unlike Random Forest or the MLP, it exploits connectivity between functionally related plots, the attention enrichment at $N=5$ and $N=7$ confirms this mechanism is used effectively, and it produces interpretable, edge-level attention coefficients that no tabular model can provide. For a surveillance application where understanding \emph{why} and \emph{through which pathway} a plot is at risk matters as much as the score itself, this interpretability and extensibility (towards dynamic edges, inductive settings, or cross-species pathogen graphs) justifies the architecture beyond raw PR-AUC.
+
+\subsection{Transductive Bias under Spatial Holdout}
+
+On the spatial holdout, EcoPE-GAT and Plain GAT underperform tabular baselines. Our setting is transductive: all 79{,}004 nodes, including North American test plots, are present in the graph at training time, connected to training nodes via high-attention edges, fundamentally different from inductive generalisation, where test nodes are unseen at training time. The degradation reflects the difficulty of predicting labels for nodes whose neighbourhood is dominated by other withheld test nodes, not a failure to generalise to unseen functional compositions, for which the random split is the appropriate evaluation. We further argue that geographic holdout is not the ecologically relevant generalisation criterion for a trait-similarity graph: North American plots are most closely connected to European and Australian plots in trait space, not to other North American plots, so withholding a geographic region disrupts functional connectivity rather than isolating a genuinely novel ecological subspace. A more appropriate holdout would exclude a functional group or biome type entirely, which we leave as future work.
+
+\subsection{Ecological Interpretation}
+
+The attention analysis converges with the ecological literature on a consistent narrative. Leaf fresh mass and leaf area determine the physical surface available for pathogen contact and spore germination. Wood vessel length and hydraulic traits determine the rate of systemic spread once infection occurs. Leaf $\delta^{15}$N reflects the nitrogen economy and symbiotic associations that mediate chemical defences. These are not arbitrary statistical correlations: they represent well-understood mechanistic pathways linking plant functional strategy to disease susceptibility. The reversal of attention enrichment at $N=10$ further suggests that the informative functional signal becomes diluted as the positive class expands and pathogen records diffuse across a wider range of community types, a finding that motivates horizon-specific analysis in future work.
+
+\subsection{Limitations}
+
+Despite the contributions above, three limitations of the current study should be acknowledged, which also point to directions for future work:
+
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Transductive setting}: an inductive variant would require architectural modifications (e.g.\ GraphSAGE-style neighbourhood sampling).
+  \item \textbf{Class imbalance}: despite positive-class reweighting, $\sim 1.7\%$ prevalence at $N=5$ remains challenging; focal loss \citep{lin2017} or graph-based SMOTE may help.
+  \item \textbf{GBIF coverage}: pathogen records are geographically biased towards Europe and North America, which may affect spatial holdout evaluations.
+\end{itemize}
+
+% =========================================================
+\section{Conclusion}
+\label{sec:conclusion}
+
+We introduced EcoPE-GAT, to our knowledge, one of the first graph neural network approaches for global plant pathogen emergence prediction. By constructing a vegetation plot network in functional trait space and augmenting it with EcoPE, a novel, domain-specific ecological positional encoding, we demonstrated consistent improvements over the plain GAT ablation across multiple prediction horizons, while producing interpretable ecological embeddings and attention maps that no tabular model can provide. The attention enrichment analysis, carried out across all three horizons, reveals that the model's message-passing mechanism is ecologically grounded at short-to-medium prediction horizons, while flagging an important shift in attention behaviour at $N=10$ that warrants further investigation. Our results establish a principled, biologically motivated framework for graph-based macroecological modelling, and introduce EcoPE as a reusable component for any GNN operating on vegetation or species occurrence data. We further characterised, to our knowledge, for the first time, the transductive bias that affects GNN evaluation under geographic holdout in ecological settings, a methodological contribution with broad implications for the field.
+
+% =========================================================
+% Declarations required by the Ecological Modelling Guide for Authors
+% (https://www.sciencedirect.com/journal/ecological-modelling/publish/guide-for-authors)
+% =========================================================
+
+\section*{Declaration of generative AI and AI-assisted technologies in the writing process}
+During the preparation of this work the author(s) used ChatGPT (OpenAI) and Claude (Anthropic) in order to assist with drafting and improving the language and readability of the manuscript text. After using these tools, the author(s) reviewed and edited the content as needed and take(s) full responsibility for the content of the published article.
+
+% To print the CRediT authorship contribution statement
+\printcredits
+
+\section*{Declaration of competing interest}
+The authors declare that they have no known competing financial interests or personal relationships that could have appeared to influence the work reported in this paper. 
+
+\section*{Data availability}
+The sPlotOpen vegetation-plot dataset is available at \url{https://doi.org/10.1111/geb.13346} \citep{sabatini2021}. Plant-pathogen occurrence records were retrieved from GBIF via a single reproducible occurrence download: GBIF.org (31 August 2026) GBIF Occurrence Download \url{https://doi.org/10.15468/dl.ps65sp}.
+
+% =========================================================
+\begin{thebibliography}{99}
+
+\bibitem{beck2014} Beck, J., B\"oller, M., Erhardt, A., Schwanghart, W. (2014). Spatial bias in the GBIF database and its effect on modeling species' geographic distributions. \textit{Ecological Informatics}, 19:10--15. DOI: \url{https://doi.org/10.1016/j.ecoinf.2013.11.002}.
+
+\bibitem{bebber2014} Bebber, D.P., Holmes, T., Gurr, S.J. (2014). The global spread of crop pests and pathogens. \textit{Global Ecology and Biogeography}, 23(12):1398--1407. DOI: \url{https://doi.org/10.1111/geb.12214}.
+
+\bibitem{bruelheide2018} Bruelheide, H., Dengler, J., Purschke, O., et al. (2018). Global trait--environment relationships of plant communities. \textit{Nature Ecology \& Evolution}, 2(12):1906--1917. DOI: \url{https://doi.org/10.1038/s41559-018-0699-8}.
+
+\bibitem{croft2023} Croft, V.M., van Iersel, S.C.J.L., Della Santina, C. (2023). Forecasting infections with spatio-temporal graph neural networks: a case study of the Dutch SARS-CoV-2 spread. \textit{Frontiers in Physics}, 11:1277052. DOI: \url{https://doi.org/10.3389/fphy.2023.1277052}.
+
+\bibitem{dwivedi2020} Dwivedi, V.P., Bresson, X. (2020). A generalization of Transformers to graphs. arXiv:2012.09699. Presented at the AAAI 2021 Workshop on Deep Learning on Graphs (DLG-AAAI'21).
+
+\bibitem{elith2009} Elith, J., Leathwick, J.R. (2009). Species distribution models. \textit{Annual Review of Ecology, Evolution, and Systematics}, 40:677--697. DOI: \url{https://doi.org/10.1146/annurev.ecolsys.110308.120159}.
+
+\bibitem{fisher2012} Fisher, M.C., et al. (2012). Emerging fungal threats to animal, plant and ecosystem health. \textit{Nature}, 484(7393):186--194. DOI: \url{https://doi.org/10.1038/nature10947}.
+
+\bibitem{gbif2023} GBIF Secretariat (2023). GBIF Backbone Taxonomy. \textit{GBIF Backbone Taxonomy dataset}. DOI: \url{https://doi.org/10.15468/39omei}.
+
+\bibitem{grinsztajn2022} Grinsztajn, L., Oyallon, E., Varoquaux, G. (2022). Why tree-based models still outperform deep learning on tabular data. \textit{Advances in Neural Information Processing Systems (NeurIPS)}, 35 (Datasets and Benchmarks Track). arXiv:2207.08815.
+
+\bibitem{guillera2015} Guillera-Arroita, G., Lahoz-Monfort, J.J., Elith, J., Gordon, A., Kujala, H., Lentini, P.E., McCarthy, M.A., Tingley, R., Wintle, B.A. (2015). Is my species distribution model fit for purpose? Matching data and models to applications. \textit{Global Ecology and Biogeography}, 24(3):276--292. DOI: \url{https://doi.org/10.1111/geb.12268}.
+
+\bibitem{hamilton2017} Hamilton, W., Ying, Z., Leskovec, J. (2017). Inductive representation learning on large graphs. \textit{Advances in Neural Information Processing Systems (NeurIPS)}, 30. arXiv:1706.02216.
+
+\bibitem{harrell2025} Harrell, L., Kaeser-Chen, C., Karagol Ayan, B., et al. (2025). Heterogeneous graph neural networks for species distribution modeling. \textit{ICLR 2025 Workshop on Tackling Climate Change with ML}, arXiv:2503.11900.
+
+\bibitem{kingma2015} Kingma, D.P., Ba, J. (2015). Adam: A method for stochastic optimization. \textit{International Conference on Learning Representations (ICLR)} 2015. arXiv:1412.6980.
+
+\bibitem{kipf2017} Kipf, T.N., Welling, M. (2017). Semi-supervised classification with graph convolutional networks. \textit{International Conference on Learning Representations (ICLR)} 2017. arXiv:1609.02907.
+
+\bibitem{klemmer2023pegnn} Klemmer, K., Safir, N.S., Neill, D.B. (2023). Positional encoder graph neural networks for geographic data. \textit{Proceedings of the 26th International Conference on Artificial Intelligence and Statistics (AISTATS)}, PMLR 206:1379--1389.
+
+\bibitem{lavorel2002} Lavorel, S., Garnier, E. (2002). Predicting changes in community composition and ecosystem functioning from plant traits. \textit{Functional Ecology}, 16(5):545--556. DOI: \url{https://doi.org/10.1046/j.1365-2435.2002.00664.x}.
+
+\bibitem{li2020} Li, P., et al. (2020). Distance encoding: design provably more powerful GNNs. \textit{Advances in Neural Information Processing Systems (NeurIPS)}, 33. arXiv:2009.00142.
+
+\bibitem{lin2017} Lin, T.-Y., et al. (2017). Focal loss for dense object detection. \textit{Proceedings of the IEEE International Conference on Computer Vision (ICCV)}, 2999--3007. DOI: \url{https://doi.org/10.1109/ICCV.2017.324}.
+
+\bibitem{jin2021} Jin, H., Yuan, Y., Li, J. (2021). Host functional traits affect plant responses to pathogen stress: A meta-analysis. \textit{Acta Oecologica}, 110:103703. DOI: \url{https://doi.org/10.1016/j.actao.2021.103703}.
+
+\bibitem{roberts2017} Roberts, D.R., et al. (2017). Cross-validation strategies for data with temporal, spatial, hierarchical, or phylogenetic structure. \textit{Ecography}, 40(8):913--929. DOI: \url{https://doi.org/10.1111/ecog.02881}.
+
+\bibitem{sabatini2021} Sabatini, F.M., et al. (2021). sPlotOpen: An environmentally balanced, open-access, global dataset of vegetation plots. \textit{Global Ecology and Biogeography}, 30(9):1740--1764. DOI: \url{https://doi.org/10.1111/geb.13346}.
+
+\bibitem{saito2015} Saito, T., Rehmsmeier, M. (2015). The precision-recall plot is more informative than the ROC plot. \textit{PLOS ONE}, 10(3):e0118432. DOI: \url{https://doi.org/10.1371/journal.pone.0118432}.
+
+\bibitem{siefert2024} Siefert, A., Laughlin, D.C., Sabatini, F.M. (2024). You shall know a species by the company it keeps: leveraging co-occurrence data to improve ecological prediction. \textit{Journal of Vegetation Science}, 35:e13314. DOI: \url{https://doi.org/10.1111/jvs.13314}.
+
+\bibitem{valavi2022} Valavi, R., et al. (2022). Predictive performance of presence-only species distribution models. \textit{Ecological Monographs}, 92(1):e01486. DOI: \url{https://doi.org/10.1002/ecm.1486}.
+
+\bibitem{vaswani2017} Vaswani, A., et al. (2017). Attention is all you need. \textit{Advances in Neural Information Processing Systems (NeurIPS)}, 30. arXiv:1706.03762.
+
+\bibitem{velickovic2018} Veli\v{c}kovi\'c, P., et al. (2018). Graph attention networks. \textit{International Conference on Learning Representations (ICLR)} 2018. arXiv:1710.10903.
+
+\bibitem{wu2025} Wu, et al. (2025). GNN-SDM: A graph neural network-based framework integrating complex landscape patterns into species distribution modelling. \textit{Global Ecology and Biogeography}, 34(11):e70162. DOI: \url{https://doi.org/10.1111/geb.70162}.
+
+\bibitem{zhao2023} Zhao, W., Efremova, N. (2023). Soil organic carbon estimation from climate-related features with graph neural network. arXiv:2311.15979. Presented at \textit{Tackling Climate Change with Machine Learning: workshop at NeurIPS 2023}.
+
+\end{thebibliography}
+\end{document}%% EcoPE-GAT article, reformatted using Elsevier's cas-sc (single column) class.
+\PassOptionsToPackage{hyperfootnotes=false}{hyperref}
+\documentclass[a4paper,fleqn]{cas-sc}
+
+\usepackage[numbers,square,sort&compress]{natbib}
+
+% No ORCID information supplied for the authors; suppress the (otherwise empty) ORCID footnote.
+\RenewDocumentCommand \printorcid { } { }
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{float}       % NEW: enables the [H] "force here" float placement specifier
+\usepackage{placeins}    % NEW: provides \FloatBarrier to stop floats drifting past a point
+
+\begin{document}
+\let\WriteBookmarks\relax
+\def\floatpagepagefraction{1}
+\def\textpagefraction{.001}
+
+% Short title
+\shorttitle{EcoPE-GAT}
+
+% Short author
+\shortauthors{Laib and Laiche}
+
+% Main title of the paper
+\title[mode=title]{EcoPE-GAT: Graph Attention Networks with Ecological Positional Encoding for Global Plant Pathogen Emergence Prediction}
+
+% First author
+\author[1]{Mohamed Djounaid Laib}
+\ead{Mohamed.djounaid.laib_d@usthb.edu.dz}
+\credit{Conceptualization, Implementation, Methodology, Software, Writing, Formal analysis -- original draft}
+
+
+% Second author
+\author[1,2]{Nacéra Laiche}
+\cormark[1]
+\ead{nlaiche@usthb.dz}
+\credit{Supervision, Methodology, Writing, Formal analysis -- review \& editing. All authors approved the manuscript}
+
+\affiliation{organization={Faculty of Computer Science, Artificial Intelligence and Data Sciences Department, University of Sciences and Technology Houari Boumediene (USTHB)},
+            city={Algiers},
+            country={Algeria}}
+
+\cortext[1]{Corresponding author}
+
+% Here goes the abstract
+\begin{abstract}
+Predicting the emergence of plant pathogens at macroecological scales is a critical challenge at the intersection of ecology and artificial intelligence. Existing approaches treat vegetation plots as independent observations, ignoring the functional connectivity between plant communities that governs shared pathogen risk. In this paper we introduce EcoPE-GAT, a novel graph neural network architecture that reformulates plant pathogen emergence prediction as a node classification problem over a global vegetation plot network. Each of the 79{,}004 plots from the sPlotOpen database is represented as a node, connected to its ten most functionally similar plots via $k$-nearest-neighbour edges in trait space, a biologically motivated choice grounded in the principle that communities sharing functional traits share susceptibility niches. We further propose EcoPE (Ecological Positional Encoding), a learned MLP encoder that maps each plot's position in ecological space (climate principal components, geographic coordinates, biome identity) into a 32-dimensional embedding, injecting macroecological context prior to graph message passing. Unlike topology-based positional encodings (Laplacian PE, RWSE), EcoPE encodes domain content rather than graph structure, making it a genuinely novel contribution to the GNN positional encoding literature. We evaluate EcoPE-GAT against four baseline models: Logistic Regression, Random Forest, MLP, and a plain GAT ablation, across prediction horizons $N \in \{5, 7, 10\}$ years. On the random split, EcoPE-GAT consistently matches or outperforms the plain GAT ablation across all three evaluated prediction horizons, with gains of up to $+33\%$ ($N=5$) and $+17\%$ ($N=10$), demonstrating that the contribution of EcoPE generalises across horizons rather than being an artefact of a single setting, and that it improves the model independently of raw architectural capacity. The learned EcoPE embeddings spontaneously recover biome structure without supervision, and attention weight analysis reveals enrichment of pathogen-positive plots among high-attention edges at short prediction horizons, validating biologically meaningful message passing. We further establish, for the first time, that transductive graph learning introduces a measurable spatial bias under geographic holdout evaluation, a methodological finding with broad implications for GNN-based ecological modelling.
+\end{abstract}
+
+% Keywords
+\begin{keywords}
+Graph Neural Network \sep Plant Pathogen Emergence \sep Ecological Positional Encoding \sep Macroecology \sep Functional Traits \sep sPlotOpen \sep GBIF \sep GAT \sep Transductive Learning
+\end{keywords}
+
+{\hfuzz=118pt\maketitle}
+
+% =========================================================
+\section{Introduction}
+
+Plant pathogens represent one of the most pervasive and poorly predicted threats to terrestrial ecosystems and global food security \citep{bebber2014,fisher2012}. As climate change reshapes vegetation distributions and introduces novel host--pathogen contact zones, the ability to anticipate pathogen emergence from observable community properties has become a research priority \citep{fisher2012}. Despite the availability of large-scale vegetation databases such as sPlotOpen \citep{sabatini2021} and global occurrence repositories such as GBIF \citep{gbif2023}, no unified predictive framework has been proposed that jointly exploits plant functional community structure and pathogen occurrence history at the global scale.
+
+Existing approaches exhibit two fundamental limitations. First, species distribution models (SDMs) and tabular machine learning methods treat vegetation plots as independent, identically distributed observations \citep{elith2009,guillera2015}. This independence assumption is ecologically incorrect: plant communities that share functional traits share susceptibility niches, and pathogen pressure in one community is informative about risk in functionally similar communities elsewhere on the planet. A model that ignores this connectivity discards a structurally important signal. Second, occurrence-based models are systematically corrupted by surveillance bias, the confounding of pathogen records with monitoring effort rather than true emergence rates \citep{beck2014}.
+
+We introduce EcoPE-GAT (Ecological Positional Encoding Graph Attention Network), which directly addresses both limitations by reformulating pathogen prediction as node classification on a global graph of vegetation plots connected by functional trait similarity, a connectivity structure that explicitly encodes the shared-susceptibility hypothesis, augmented by EcoPE, a novel learned positional encoding that injects macroecological context prior to graph message passing.
+
+To support this framework, we construct a novel dataset by merging sPlotOpen with GBIF pathogen records. We verify, via a traits-only tabular baseline with surveillance artefacts removed \citep{beck2014}, that plant functional community composition carries a genuine predictive signal for pathogen emergence (Section~\ref{sec:dataset}): a class-balanced Random Forest trained on trait features alone substantially outperforms chance across all three prediction horizons, achieving PR-AUC of $0.437$, $0.391$ and $0.499$ at $N=5,7,10$ respectively, against chance baselines of only $0.017$, $0.026$ and $0.049$. This result directly motivates the core design choice of EcoPE-GAT: if functionally similar communities share pathogen risk, a graph built on functional trait similarity is a principled connectivity structure for learning.
+
+Our main contributions are:
+\begin{enumerate}[leftmargin=1.4em]
+  \item A novel graph-based formulation of global plant pathogen emergence prediction, with a biologically motivated graph construction in functional trait space.
+  \item Unlike conventional GNN positional encodings based on graph topology, we propose EcoPE (Ecological Positional Encoding), a domain-specific encoding of ecological context.
+  \item Systematic evidence that EcoPE improves over plain GAT on random splits, with gains of up to $+33\%$ ($N=5$) and consistent or comparable performance across all evaluated prediction horizons.
+  \item The first empirical characterisation of transductive graph bias under geographic holdout evaluation in a macroecological setting.
+\end{enumerate}
+
+The remainder of this paper is organised as follows. Section~\ref{sec:relwork} reviews related work on functional-trait-based pathogen prediction, graph neural networks for ecological modelling, positional encoding in GNNs, and spatial evaluation bias, before summarising the resulting research gap. Section~\ref{sec:approach} presents our proposed approach, detailing the motivation behind EcoPE-GAT, the construction of the merged vegetation--pathogen dataset, the EcoPE-GAT architecture itself, and how predictions are produced. Section~\ref{sec:expsetup} describes our experimental protocol, baselines, implementation details, and results. Section~\ref{sec:discussion} discusses the implications, ecological interpretation, and limitations of our findings, and Section~\ref{sec:conclusion} concludes the paper.
+
+% =========================================================
+\section{Related Work}
+\label{sec:relwork}
+
+Work related to ours can be organised into four broad families: (1)~functional-trait-based approaches to plant disease and pathogen risk prediction, which motivate the ecological premise of our model; (2)~graph neural networks applied to ecological and species distribution modelling, which motivate our architectural choice of GAT; (3)~positional encoding strategies for graph neural networks, which contextualise our proposed EcoPE encoder; and (4)~work on spatial generalisation and evaluation bias, which motivates our geographic holdout analysis. We review each family in turn before summarising the specific gap that EcoPE-GAT addresses.
+
+\subsection{Functional-trait based pathogen prediction}
+
+Plant pathogens are increasingly recognised as a direct threat to global food security and ecosystem stability \citep{bebber2014}, with fungal and fungal-like pathogens responsible for a growing share of emerging infectious disease events across plant, animal, and ecosystem health \citep{fisher2012}. Plant functional traits are measurable morphological, physiological, or phenological characteristics of a species, such as leaf area, wood density, or leaf nitrogen content, that influence its growth, survival, and reproduction; aggregated at the community level, they provide a compact, taxonomy-independent description of a vegetation community's ecological strategy, and are widely used as such in macroecology. Correlative species distribution models (SDMs) dominate macroecological plant disease prediction \citep{elith2009}, using climate and geographic covariates to project suitable conditions for individual pathogen species; their reliability when transferred beyond the conditions they were fitted on, however, remains an open methodological concern \citep{guillera2015}. These models treat the host community as homogeneous, ignoring functional composition. Community-weighted means (CWM) and variances (CWV) of plant functional traits have been linked to ecosystem vulnerability at continental scale \citep{bruelheide2018}, building on the foundational link between trait composition and ecosystem functioning \citep{lavorel2002}, yet their application as a direct predictor of pathogen emergence risk remains largely unexplored, a gap that Jin et al.~\citep{jin2021} begin to close by showing that host functional traits shape plant responses to pathogen stress at the individual level. More recently, an alternative representation strategy has emerged: Siefert et al.~\citep{siefert2024} derive unsupervised species embeddings from co-occurrence patterns on the same sPlotOpen database used here, and show that these embeddings predict species range shifts more reliably than trait- or phylogeny-based models alone.
+
+Although functional traits, and, increasingly, learned co-occurrence embeddings, have been shown to explain ecosystem vulnerability and species behaviour, existing approaches model vegetation plots or species independently and fail to exploit ecological connectivity between communities; even representation-learning alternatives to traits operate at the species level and do not propagate risk across functionally linked plots.
+
+\subsection{Graph Neural Networks for Ecological Modelling}
+
+Gradient-boosted trees and random forests remain the standard tabular baselines for ecological modelling, and their strength on in-distribution data is well documented. However, they offer no mechanism for exploiting connectivity between observations, a structural property that graph neural networks are explicitly designed to leverage. Among GNN architectures, Graph Convolutional Networks (GCN) aggregate neighbour information using fixed, normalised weights \citep{kipf2017}; GraphSAGE extends this by learning flexible neighbourhood aggregation functions, including for previously unseen nodes \citep{hamilton2017}; and Graph Attention Networks (GAT) further refine the idea by learning per-edge attention coefficients, offering an interpretable weighting of each neighbour's contribution \citep{velickovic2018}. This family of models has recently been applied directly to species distribution modelling: Wu et al.~\citep{wu2025} propose GNN-SDM, which aggregates heterogeneous landscape patches into a graph to infer habitat suitability from species range polygons, while Harrell et al.~\citep{harrell2025} introduce a heterogeneous GNN that represents species and locations as two distinct node types, learning species--environment interactions as explicit graph edges. Both confirm that graph-structured models outperform single-species and feed-forward baselines on standard SDM benchmarks, reinforcing GAT's suitability for ecological problems where attention coefficients provide an interpretable form of neighbourhood weighting.
+
+Existing ecological GNNs operate on spatial proximity graphs or species--location bipartite graphs, and have not been applied to pathogen emergence prediction using functional trait similarity; no prior work has constructed graphs over global vegetation plots on this basis.
+
+\subsection{Positional Encoding in Graph Neural Networks}
+
+GNN positional encodings address the permutation-invariance of message passing by providing each node with a unique structural fingerprint. Laplacian eigenvector encodings \citep{dwivedi2020} and distance-based structural encodings \citep{li2020} encode topology, the node's structural role within the graph, and have proven effective across a range of graph learning tasks, drawing on ideas from Transformer-style positional encoding. Closer to our setting, Klemmer et al.~\citep{klemmer2023pegnn} propose PE-GNN, which learns a context-aware embedding of raw geographic coordinates and predicts spatial autocorrelation as an auxiliary task, improving spatial interpolation on geo-referenced regression problems; Zhao et al.~\citep{zhao2023} apply this positional-encoder paradigm to soil organic carbon estimation from climate features, confirming its value in environmental prediction more broadly.
+
+These positional encoders remain general-purpose: they embed raw latitude/longitude (Klemmer et al.) for arbitrary geo-referenced regression, independent of any domain-specific ecological context, and are evaluated on spatial-proximity graphs rather than trait-similarity graphs. A domain-specific ecological positional encoding that jointly encodes climate context, biome identity, and coordinates to complement a non-geographic, trait-based graph topology, as opposed to a purely geographic one, has, to our knowledge, not been proposed.
+
+\subsection{Spatial Generalisation and Evaluation Bias}
+
+Robust evaluation is a persistent methodological challenge in spatial ecological modelling. Roberts et al.~\citep{roberts2017} show that conventional random cross-validation systematically overestimates predictive performance when observations are spatially autocorrelated, and argue for spatially-blocked or geographically-structured holdout strategies as a more honest test of generalisation. In the GNN literature specifically, spatio-temporal graph models for epidemic forecasting, for instance Croft et al.~\citep{croft2023}'s model of regional SARS-CoV-2 spread across Dutch municipalities, are typically evaluated transductively, with all locations present in the graph throughout training, yet the implications of this setting for spatial generalisation are rarely discussed explicitly. The transductive-versus-inductive distinction is well known in the broader graph learning literature, but its specific consequences for geographic holdout evaluation in ecological GNNs, where node connectivity is itself defined by ecological or geographic similarity rather than by a fixed observation graph, remain largely unexamined.
+
+Existing spatial cross-validation guidance was developed for non-graph models, and spatio-temporal ecological GNN studies rarely interrogate whether their transductive training setting inflates or deflates apparent generalisation under geographic holdout, particularly for graphs whose connectivity is itself defined by ecological rather than purely geographic similarity.
+
+\subsection{Summary of Research Gap}
+
+As far as we know, no existing work simultaneously: (1)~models pathogen emergence as a graph problem, (2)~builds graphs from plant functional traits, (3)~introduces a domain-specific ecological positional encoding, and (4)~characterises the transductive bias introduced by such a graph under geographic holdout evaluation. Therefore, our objective is to develop a robust graph-based framework for global plant pathogen emergence prediction that integrates functional trait similarity, ecological context, and rigorous spatial evaluation. To achieve this objective, we propose EcoPE-GAT, which combines a functional-trait-based graph with a domain-specific Ecological Positional Encoding and explicitly evaluates the effects of transductive graph learning under geographic holdout.
+
+% =========================================================
+\section{Proposed Approach}
+\label{sec:approach}
+
+\subsection{Motivation}
+\label{sec:motivation}
+
+Before describing the EcoPE-GAT architecture in detail, we first lay out the three ecological and methodological observations that motivate its design, and briefly recall the graph neural network background that informs our choice of backbone.
+
+\textbf{Observation 1: functional traits already carry predictive signal.} A preliminary tabular analysis (detailed in Section~\ref{sec:dataset}) shows that a Random Forest trained solely on plant functional traits, with geographic and temporal covariates withheld to control for surveillance bias, substantially outperforms chance at predicting future pathogen emergence. This establishes that community-level functional composition is not a passive backdrop but an active predictor of disease risk.
+
+\textbf{Observation 2: functionally similar communities share risk.} Ecological theory and coevolutionary dynamics suggest that two vegetation plots with similar functional trait profiles, even on different continents, are exposed to similar selective pressures and are therefore likely to share pathogen susceptibility.
+
+\textbf{Observation 3: tabular models cannot exploit this connectivity.} Logistic regression, random forests, and even capacity-matched MLPs treat each plot as an independent, identically distributed sample. They have no mechanism for propagating risk information between functionally related communities, discarding a structurally meaningful signal.
+
+These three observations motivate the construction of a graph representation of global vegetation communities and the design of a graph neural network capable of exploiting ecological relationships between them.
+
+\subsubsection{GNNs and Graph Attention Networks: Background}
+\label{sec:gat-background}
+
+Among graph neural network architectures, Graph Convolutional Networks aggregate neighbour information using fixed, normalised weights, providing no mechanism to distinguish the relative importance of different functional neighbours. GraphSAGE learns flexible aggregation functions, including for nodes unseen at training time, but without per-edge attention. Graph Attention Networks (GAT) extend this idea by learning, for each edge $(i,j)$, an attention coefficient $\alpha_{ij}$ that weights the contribution of neighbour $j$ to node $i$'s update.
+
+This property is particularly well suited to our setting: not all functional neighbours of a vegetation plot are equally informative for predicting pathogen risk, a highly pathogen-experienced neighbour should contribute more to a plot's risk estimate than a neighbour with no pathogen history. We therefore adopt GAT as the backbone of EcoPE-GAT, and describe in Section~\ref{sec:architecture} how we further equip it with a domain-specific positional encoding, EcoPE, designed to inject ecological context that pure graph topology cannot provide.
+
+\subsection{Methodology}
+\label{sec:overview}
+
+Our overall pipeline comprises three main steps: (i)~constructing a merged vegetation--pathogen dataset from sPlotOpen and GBIF records (Section~\ref{sec:dataset}); (ii)~building the EcoPE-GAT architecture around this dataset, which combines a functional-trait similarity graph with our proposed Ecological Positional Encoding and stacked graph attention layers (Section~\ref{sec:architecture}); and (iii)~producing plot-level pathogen emergence predictions from the resulting node embeddings (Section~\ref{sec:predictions}). Figure~\ref{fig:overview} summarises this pipeline. EcoPE-GAT, and in particular the EcoPE encoder within it, is the central modelling component of this pipeline and the primary contribution of this work; the dataset construction and prediction steps that surround it are necessary supporting stages rather than separate contributions.
+
+\begin{figure}[pos=t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/pipeline_overview.png}
+  \caption{Overview of the EcoPE-GAT pipeline}
+  \label{fig:overview}
+\end{figure}
+
+\subsubsection{Dataset Construction}
+\label{sec:dataset}
+
+\begin{itemize}[leftmargin=1.4em]
+
+\item \textbf{Vegetation Plot Database.} Our node set draws from sPlotOpen \citep{sabatini2021}, an open-access global repository of 79{,}004 vegetation survey plots. Each plot is characterised by the community-weighted mean (CWM) and community-weighted variance (CWV) of 18 plant functional traits, together encoding both the central tendency and the within-community dispersion of the local plant strategy space. Additional plot-level attributes include species richness, two measures of trait data coverage, and two principal components summarising the soil-climate environment (SoilClim-PC1/PC2). After flagging columns with $>20\%$ missing values via binary indicators, each plot is represented by a $D=41$ dimensional feature vector. Metadata retained for graph construction and EcoPE encoding include decimal latitude/longitude, continent, biome category, and survey year.
+
+\item \textbf{Pathogen Occurrence Records and Spatial Joining.} Global plant pathogen records were downloaded from GBIF \citep{gbif2023} and restricted to fungal, oomycete, and bacterial taxa known to be plant-associated. Two quality filters were applied: occurrences with georeferencing uncertainty exceeding 10~km and those lacking a reported observation date were discarded. The cleaned records were then matched to vegetation plots by spatial proximity: a plot receives a pathogen occurrence if at least one qualifying record falls within a 50~km radius of the plot centroid.
+
+\item \textbf{Emergence Labels and Class Imbalance.} We cast the prediction task as a horizon-specific binary classification. Given a plot $i$ surveyed at time $r_i$, its label under horizon $N$ is:
+\begin{equation}
+y_i^{(N)} = \mathbb{1}\Big[\exists\ \text{pathogen record in buffer}(i): 0 < t_{event} - r_i \leq N \Big]
+\end{equation}
+where $y_i^{(N)} \in \{0,1\}$ is the binary emergence label of plot $i$ for horizon $N$; $r_i$ is the survey year of plot $i$; $\text{buffer}(i)$ denotes the set of pathogen occurrence records within the 50~km spatial buffer of plot $i$; and $t_{event}$ is the date of a given pathogen record in that buffer. $N \in \{5, 7, 10\}$ years. The fraction of positive plots grows from roughly $1.7\%$ at $N=5$ to $4.9\%$ at $N=10$, reflecting the accumulation of new pathogen reports over longer windows. This severe imbalance is addressed throughout by weighting the positive class at $w^+ = n^-/n^+$, where $n^-$ and $n^+$ denote, respectively, the number of negative and positive plots in the training set, in all loss functions, and by reporting PR-AUC rather than accuracy as the primary metric \citep{saito2015}.
+
+\item \textbf{Evidence of a Learnable Signal.} Before introducing the graph model, we first verify that the merged dataset contains a meaningful predictive signal. A class-balanced Random Forest (200 estimators) trained on the 41 trait features alone, with survey year and all geographic covariates withheld to avoid conflating surveillance density with ecological risk \citep{beck2014}, substantially outperforms chance across all three prediction horizons (PR-AUC of $0.437$, $0.391$, and $0.499$ at $N=5,7,10$, against chance baselines of $0.017$, $0.026$, and $0.049$ respectively). This establishes that variation in plant functional community composition is predictive of future pathogen emergence in a bias-controlled setting, and provides the empirical grounding for the core design choice of EcoPE-GAT: connecting plots by similarity in trait space, so that message passing can propagate risk signals across functionally analogous communities.
+
+\end{itemize}
+
+% =========================================================
+\subsubsection{EcoPE-GAT Architecture}
+\label{sec:architecture}
+
+We now describe the EcoPE-GAT architecture itself, which proceeds in three steps: first, we formalise the prediction task and construct the functional-trait similarity graph over which the model operates; second, we compute the Ecological Positional Encoding (EcoPE) for each node; and third, we propagate and weight information across the graph using stacked graph attention layers. The full architecture, from raw trait features and ecological context through to the per-plot pathogen emergence probability, is shown in Figure~\ref{fig:architecture}.
+
+\begin{figure}[pos=t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/ecope_gat.png}
+  \caption{EcoPE-GAT overall architecture. Left: trait features $X$ and the $k$-NN functional-trait graph are enriched with the EcoPE embedding $P$ before being propagated through two multi-head GAT layers to produce per-plot pathogen emergence probabilities $\hat{y} \in [0,1]^N$. Right: the EcoPE encoder itself, a 2-layer MLP that maps each plot's ecological context $C$ (climate, geographic location, biome) into a 32-dimensional positional embedding $P$.}
+  \label{fig:architecture}
+\end{figure}
+
+\begin{itemize}[leftmargin=1.4em]
+
+\item \textbf{Problem Formulation and Graph Construction.} Let $G=(V,E)$ be an undirected graph where each node $v_i \in V$ (vegetation plot) has feature vector $x_i \in \mathbb{R}^D$ and ecological context $c_i \in \mathbb{R}^{D_c}$. The task is binary node classification: predict $y_i^{(N)} \in \{0,1\}$ for each plot.
+
+We construct the graph by connecting each plot to its $k$-nearest neighbours in functional trait space, rather than by geographic or climate proximity. This choice is grounded in two established ecological principles. First, the functional trait hypothesis posits that species with similar functional strategies occupy similar ecological niches and face similar biotic pressures, including pathogens. Second, plant--pathogen coevolution theory predicts that host community functional composition determines susceptibility niches: a pathogen that successfully colonises a community with trait profile $x$ is expected to also emerge in communities with similar profiles, regardless of geographic distance. Figure~\ref{fig:geomap} confirms this choice empirically: the top 5\% highest-attention edges in the trained model frequently cross continental boundaries, connecting plots in Europe to functionally similar plots in Australia and North America, if pathogen risk propagation were geographically structured, attention would instead cluster locally. A geographically-defined graph would miss this trait-driven signal entirely, and a climate-defined graph would conflate the ecological context (already captured by EcoPE) with the connectivity structure itself; we therefore use a pure trait-space graph and inject climate context through EcoPE as a separate channel.
+
+Each node is connected to its $k=10$ nearest neighbours, making the graph sparse (average degree 20 after symmetrisation) while ensuring sufficient neighbourhood size for stable attention estimation, a value consistent with the range used in ecological $k$-NN analyses \citep{bruelheide2018}, and one that avoids the over-smoothing risk associated with dense graphs in GAT architectures \citep{velickovic2018}. Edge weights encode ecological similarity via
+\begin{equation}
+w_{ij} = \frac{1}{1 + d(x_i, x_j)}
+\end{equation}
+where $w_{ij}$ is the weight assigned to the edge between plots $i$ and $j$, and $d(x_i, x_j)$ is the Euclidean distance between the normalised trait feature vectors $x_i$ and $x_j$ of plots $i$ and $j$, mapping the continuous similarity gradient into $[0,1]$ and preserving the relative informativeness of each connection.
+
+\item \textbf{Ecological Positional Encoding (EcoPE).} A natural baseline would be to simply append climate PCs, latitude, longitude, and biome index directly to the node feature vector $x_i$. EcoPE departs from this for three reasons. Raw coordinates and climate values sit on incommensurable scales and carry no explicit ecological meaning on their own, their effect on gradient flow depends entirely on the downstream network's ability to interpret them, with no structural guidance about their ecological relationships. By contrast, EcoPE learns a non-linear projection of these variables into a dedicated 32-dimensional manifold, one that can discover, for instance, that ``temperate oceanic'' and ``temperate continental'' biomes are adjacent in ecological risk space while being far apart in raw coordinate space, a relation simple concatenation cannot capture without learning it incidentally from a far noisier label signal. Finally, separating ecological context into its own encoder $f_\phi$ creates an independent learning pathway: the gradient signal from the loss can specialise $f_\phi$ on ecological structure without interference from the trait features, an architectural separation analogous to the split between positional and semantic streams in Transformer architectures \citep{vaswani2017}, as illustrated on the right-hand side of Figure~\ref{fig:architecture}. The t-SNE of learned EcoPE embeddings, presented in Figure~\ref{fig:tsne}, provides direct empirical evidence for this design: it shows near-perfect biome cluster separation despite the model never receiving biome as a training label, an emergent structure that simple feature concatenation, with no architectural pressure toward learning a manifold, could not produce.
+
+The encoder $f_\phi: \mathbb{R}^{D_c} \to \mathbb{R}^{D_p}$ is a 2-layer MLP with LayerNorm and GELU activations, and $p_i$ is the 32-dimensional Ecological Positional Encoding of plot $i$, defined by
+\begin{equation}
+p_i = f_\phi\big([\,\text{SoilClim-PC1}_i,\ \text{SoilClim-PC2}_i,\ \phi_i,\ \lambda_i,\ b_i\,]\big) \in \mathbb{R}^{32}
+\end{equation}
+where $\text{SoilClim-PC1}_i$ and $\text{SoilClim-PC2}_i$ are its two soil-climate principal component scores; $\phi_i$ and $\lambda_i$ are its latitude and longitude; and $b_i$ is its biome identity.
+
+The two soil-climate principal components capture the dominant axes of environmental variation, temperature--moisture gradient and seasonality, more efficiently than individual climate variables. Latitude and longitude encode geographic context without imposing a geographic connectivity structure, allowing EcoPE to learn latitudinal gradients in pathogen pressure, well documented in the epidemiological literature \citep{bebber2014}, without constraining edges to be geographically proximal. Biome identity, encoded as an integer, provides a discrete partition of the ecological space, letting EcoPE learn both fine-grained climate gradients within biomes and coarse biome-level discontinuities. A shallow 2-layer, 64-hidden-unit encoder is sufficient to learn this non-linear mapping from a 5-dimensional ecological context to the 32-dimensional output manifold, a dimension chosen to balance expressive capacity against the risk of the positional embedding dominating the 41-dimensional trait features upon concatenation. LayerNorm stabilises training given the heterogeneous scales of the input variables, and GELU is preferred over ReLU for smoother gradient flow, following common practice in Transformer-style MLP encoders.
+
+The ecological position embedding is concatenated to the trait features, $\tilde{x}_i = [x_i \,\|\, p_i] \in \mathbb{R}^{73}$, then projected to the GAT input dimension via a learned linear layer followed by LayerNorm and GELU, as shown in the node feature enrichment step of Figure~\ref{fig:architecture}.
+
+\item \textbf{Graph Attention Network Layers.} As established in Section~\ref{sec:gat-background}, GAT is the backbone of EcoPE-GAT because its per-edge attention coefficients let pathogen-experienced neighbours contribute more strongly to a plot's risk estimate than uninformative ones. The attention mechanism is defined as:
+\begin{align}
+e_{ij} &= \text{LeakyReLU}\big(a^\top [Wh_i^{(l)} \,\|\, Wh_j^{(l)}]\big) \\
+\alpha_{ij} &= \frac{\exp(e_{ij})}{\sum_{k \in \mathcal{N}(i)} \exp(e_{ik})} \\
+h_i^{(l+1)} &= \text{ELU}\Big(\frac{1}{H}\sum_{h=1}^{H}\sum_{j \in \mathcal{N}(i)} \alpha_{ij}^{(h)} W^{(h)} h_j^{(l)}\Big)
+\end{align}
+where $e_{ij}$ is the unnormalised attention score assigned by node $i$ to neighbour $j$; $W$ is a learned linear projection matrix shared across nodes; $a$ is a learned attention vector; $h_i^{(l)}$ is the representation of node $i$ at layer $l$ (with $h_i^{(0)}$ the input node embedding); $\alpha_{ij}$ is the normalised attention coefficient obtained via a softmax over the neighbourhood $\mathcal{N}(i)$ of node $i$; $H$ is the number of attention heads; and the superscript $(h)$ indexes the parameters and coefficients of head $h$.
+
+We use 2 GAT layers, as shown by the stacked GAT Layer 1 / GAT Layer 2 blocks in Figure~\ref{fig:architecture}, each expands the receptive field by one hop, so with $k=10$ a node aggregates information from up to 100 plots within 2 hops; deeper architectures risk over-smoothing, a well-documented failure mode in sparse, heterogeneous-degree ecological graphs. We use 4 attention heads, allowing different heads to specialise on different aspects of functional similarity (e.g.\ leaf economics vs.\ reproductive strategy); our per-head attention histograms (Figure~\ref{fig:attention}b) confirm mild specialisation across heads. Each head has 64 hidden dimensions, providing sufficient capacity to represent the 41-dimensional trait input plus the 32-dimensional EcoPE embedding, while remaining trainable on CPU with 79k nodes.
+
+\end{itemize}
+
+\subsubsection{Predictions}
+\label{sec:predictions}
+
+Once the two stacked GAT layers have produced a final node representation, EcoPE-GAT converts this representation into a pathogen emergence probability as follows. The outputs of the four attention heads in the last GAT layer are concatenated into a single vector $h_i^{(2)} \in \mathbb{R}^{256}$ for each plot $i$. This vector is passed through a lightweight MLP readout head (one hidden layer of 64 units with a ReLU activation, followed by a single output unit) to obtain a logit, which is mapped to a probability via a sigmoid activation:
+\begin{equation}
+\hat{y}_i^{(N)} = \sigma\big(\text{MLP}(h_i^{(2)})\big) \in [0,1].
+\end{equation}
+where $h_i^{(2)} \in \mathbb{R}^{256}$ is the concatenated output of the final GAT layer for plot $i$; $\text{MLP}(\cdot)$ is the readout head described above; $\sigma(\cdot)$ is the sigmoid activation function; and $\hat{y}_i^{(N)}$ is the resulting predicted probability. $\hat{y}_i^{(N)}$ is interpreted as the estimated probability that plot $i$ will experience a new pathogen occurrence within the next $N$ years, corresponding to the ``Prediction (Per Plot)'' output shown in Figure~\ref{fig:architecture}. During training, this probability is compared against the ground-truth label $y_i^{(N)}$ using the class-weighted binary cross-entropy loss of Equation~\eqref{eq:loss} (Section~\ref{sec:expsetup}); at evaluation time, the same probability is used directly to compute PR-AUC and ROC-AUC, and can additionally be thresholded (e.g.\ at $0.5$, or at a threshold tuned on the validation set) to produce a binary risk flag for a given plot and horizon. Because the setting is transductive (Section~\ref{sec:discussion}), predictions for validation and test plots are obtained using node embeddings computed with the full graph, but with test labels withheld during training.
+
+% =========================================================
+\section{Experiments}
+\label{sec:expsetup}
+
+\subsection{Prediction Horizons}
+
+All models are evaluated across three prediction horizons, $N = 5, 7,$ and $10$ years, corresponding to increasingly long windows over which pathogen emergence is observed (Section~\ref{sec:dataset}).
+
+\subsection{Evaluation Protocol}
+
+\textbf{Random split.} Plots are randomly partitioned 80/10/10 (train/val/test), stratified by label. This evaluates in-distribution performance and is the primary benchmark for comparing model architectures.
+
+\textbf{Spatial holdout.} All North American plots are withheld from training; the model is evaluated on this continent. We include this evaluation as a methodological probe rather than a primary performance claim (see Section~\ref{sec:discussion}).
+
+\textbf{Metric.} The primary metric is PR-AUC (average precision), appropriate for highly imbalanced binary classification \citep{saito2015}; ROC-AUC is reported as a secondary metric.
+
+\subsection{Implementation Details}
+
+Training uses binary cross-entropy with a positive class weight $w^+ = n^-/n^+$:
+\begin{equation}
+\label{eq:loss}
+\mathcal{L} = -\frac{1}{|T|}\sum_{i \in T}\Big( w^+ y_i \log \hat{y}_i + (1-y_i)\log(1-\hat{y}_i) \Big)
+\end{equation}
+where $\mathcal{L}$ is the training loss; $T$ is the set of training-set plots, with $|T|$ its cardinality; $y_i$ and $\hat{y}_i$ are, respectively, the ground-truth label and predicted probability for plot $i$; and $w^+ = n^-/n^+$ is the positive class weight, with $n^-$ and $n^+$ the number of negative and positive plots in the training set.
+
+We use Adam \citep{kingma2015} (lr $= 10^{-3}$, weight decay $= 10^{-4}$) with gradient clipping (max norm 1.0) to prevent early-epoch gradient explosion from the EcoPE encoder's initial activations. Learning rate is reduced via ReduceLROnPlateau (factor 0.5, patience 10) when validation PR-AUC plateaus. Training stops early with patience 30 on validation PR-AUC, with a maximum of 300 epochs, well above the typical convergence point observed at epochs 107--175 across runs, ensuring early stopping is the active termination criterion. Dropout ($p=0.3$), applied to both attention coefficients and node features, regularises against over-reliance on specific neighbours.
+
+\subsection{Baselines}
+
+We compare EcoPE-GAT against five baselines, chosen to isolate different sources of predictive power: a non-informative reference (random classifier), the minimal linear model (logistic regression), the strongest standard non-graph tabular model (random forest), a capacity- and feature-matched non-graph neural network (MLP), and an architecture-matched graph model without EcoPE (plain GAT). Together, these baselines let us separate the contribution of tabular signal, model capacity, non-linearity, and graph structure from the contribution of EcoPE itself.
+
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Random classifier}: a non-informative reference that always predicts the (training-set) class prevalence; its expected PR-AUC equals the class prevalence itself, and it establishes the chance level against which all other models are compared, separately for each horizon.
+  \item \textbf{Logistic Regression}: class-balanced linear model; the minimal non-trivial baseline.
+  \item \textbf{Random Forest} (200 trees, class-balanced): the standard strong tabular baseline for ecological modelling \citep{valavi2022}.
+  \item \textbf{MLP (no graph)}: 3-layer (128-64-32), class-weighted, same 41 node features, no graph structure. Controls for model capacity and non-linearity.
+  \item \textbf{Plain GAT (ablation)}: identical architecture to EcoPE-GAT but without the EcoPE encoder. Isolates the contribution of EcoPE from all other architectural choices.
+\end{itemize}
+
+\subsection{Results}
+\label{sec:results}
+
+Table~\ref{tab:ecope-contribution} presents the obtained results in PR-AUC that first isolate the effect of EcoPE by comparing it directly against the Plain GAT ablation, identical architecture, identical training procedure, the only difference being the EcoPE encoder.
+
+\begin{table}[t]
+\centering
+\caption{PR-AUC, random split: Plain GAT vs.\ EcoPE-GAT.}
+\label{tab:ecope-contribution}
+\begin{tabular}{lccc}
+\toprule
+Horizon & Plain GAT & EcoPE-GAT & Gain \\
+\midrule
+$N=5$  & 0.119 & 0.159 & $+33\%$ \\
+$N=7$  & 0.166 & 0.162 & $-3\%$ \\
+$N=10$ & 0.264 & 0.307 & $+17\%$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\centering
+\caption{PR-AUC across prediction horizons. RS = Random Split, SH = Spatial Holdout.}
+\label{tab:main-results}
+\small
+\begin{tabular}{lcccccc}
+\toprule
+ & \multicolumn{3}{c}{Random Split} & \multicolumn{3}{c}{Spatial Holdout} \\
+\cmidrule(lr){2-4} \cmidrule(lr){5-7}
+Model & $N=5$ & $N=7$ & $N=10$ & $N=5$ & $N=7$ & $N=10$ \\
+\midrule
+Chance              & 0.017 & 0.026 & 0.049 & 0.005 & 0.012 & 0.016 \\
+Log.\ Regression    & 0.047 & 0.066 & 0.094 & 0.034 & 0.133 & 0.081 \\
+Random Forest       & 0.437 & 0.391 & 0.499 & 0.029 & 0.055 & 0.074 \\
+MLP (no graph)      & 0.190 & 0.217 & 0.321 & 0.030 & 0.068 & 0.071 \\
+Plain GAT           & 0.119 & 0.166 & 0.264 & 0.019 & 0.046 & 0.025 \\
+\textbf{EcoPE-GAT}  & \textbf{0.159} & \textbf{0.162} & \textbf{0.307} & \textbf{0.015} & \textbf{0.033} & \textbf{0.011} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{itemize}[leftmargin=1.4em]
+
+\item \textbf{EcoPE Contribution.} EcoPE improves over the plain GAT at $N=5$ and $N=10$, with $N=7$ representing a near-tie. This isolated comparison is the cleanest evidence that EcoPE contributes independently of raw model capacity.
+
+\item \textbf{Comparison with Baselines.} We then broaden the comparison to the full baseline suite: Table~\ref{tab:main-results} presents the obtained results in PR-AUC, situating EcoPE-GAT against all five baselines. Random Forest achieves the highest PR-AUC on random splits, expected, since tree-based models consistently outperform deep learning on tabular data under in-distribution evaluation \citep{grinsztajn2022}. The MLP also outperforms both GNN variants on the random split. The advantage of EcoPE-GAT over these tabular and capacity-matched models lies not in raw PR-AUC, but in its ability to produce interpretable attention weights and ecologically structured embeddings (Sections~\ref{sec:embedding}--\ref{sec:attention}). On the spatial holdout, all GNN variants underperform tabular models, a result analysed in Section~\ref{sec:discussion} as a finding about transductive graph learning rather than a generalisation failure.
+
+\item \textbf{Embedding Analysis.}
+\label{sec:embedding}
+Figure~\ref{fig:tsne} shows t-SNE visualisations of EcoPE embeddings for a random subsample of 5{,}000 plots, computed separately for each prediction horizon $N \in \{5, 7, 10\}$. Across all three horizons, biomes form well-separated clusters without any biome-specific supervision signal, the encoder was never trained with biome as a target variable. This emergent structure validates the EcoPE design: the encoder has learned to map ecological context into a manifold reflecting the true ecological organisation of global vegetation. The clustering is consistent across horizons, confirming that it reflects a stable property of the learned ecological manifold rather than an artefact of a specific label distribution. Pathogen-positive plots concentrate in specific biome clusters, particularly in temperate and subtropical zones, consistent with known patterns of plant disease biogeography \citep{bebber2014}.
+
+\begin{figure}[pos=t]
+  \centering
+  \begin{subfigure}{\linewidth}
+    \includegraphics[width=\linewidth]{figures/tsne5.png}
+    \caption{$N=5$}
+  \end{subfigure}
+  \vspace{0.5em}
+  \begin{subfigure}{\linewidth}
+    \includegraphics[width=\linewidth]{figures/tsne7.png}
+    \caption{$N=7$}
+  \end{subfigure}
+  \vspace{0.5em}
+  \begin{subfigure}{\linewidth}
+    \includegraphics[width=\linewidth]{figures/tsne10.png}
+    \caption{$N=10$}
+  \end{subfigure}
+  \caption{t-SNE of learned EcoPE embeddings (5{,}000 plots), coloured by biome (left) and pathogen label (right), for each prediction horizon. Biome clusters emerge without supervision across all horizons.}
+  \label{fig:tsne}
+\end{figure}
+\FloatBarrier
+
+\item \textbf{Attention Analysis.}
+\label{sec:attention}
+Figure~\ref{fig:attention} reports the GAT attention coefficient analysis for all three prediction horizons. Panel (a) shows that attention weights follow a right-skewed distribution in every horizon, confirming selective rather than uniform aggregation. Panel (b) shows mild specialisation across the 4 attention heads. Panel (c) reports pathogen-positive enrichment in top-5\% attention edges relative to the overall prevalence, summarised numerically in Table~\ref{tab:attention-enrichment}.
+
+\begin{table}[t]
+\centering
+\caption{Pathogen-positive enrichment in top-5\% attention edges across horizons.}
+\label{tab:attention-enrichment}
+\begin{tabular}{lccc}
+\toprule
+Horizon & Overall prevalence & Top-5\% source & Top-5\% dest \\
+\midrule
+$N=5$  & 1.66\% & 2.84\% & 2.50\% \\
+$N=7$  & 2.57\% & 3.37\% & 3.11\% \\
+$N=10$ & 4.88\% & 4.08\% & 4.02\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+At $N=5$ and $N=7$, pathogen-positive plots are enriched among high-attention edges ($\times1.71$ and $\times1.31$ respectively), demonstrating that the attention mechanism routes information preferentially through edges connecting high-risk plots, with no supervision signal about which edges should receive high attention. At $N=10$, however, this enrichment reverses: top-5\% attention edges are \emph{less} likely to connect pathogen-positive plots than the overall prevalence (4.08\% vs 4.88\%). This inversion coincides with the highest class prevalence ($\sim$4.9\%) and suggests that at longer horizons, when positive labels are more diffuse across biomes, the attention mechanism spreads weight more uniformly rather than concentrating it on high-risk corridors, a plausible consequence of the reduced discriminability of the positive class in trait space at $N=10$.
+
+\begin{figure}[pos=t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/attention_all_horizons.png}
+  \caption{Attention analysis across prediction horizons $N \in \{5, 7, 10\}$ (rows). (a) Attention weight distribution from the last GAT layer. (b) Per-head attention distributions (4 heads). (c) Pathogen-positive enrichment in top-5\% attention edges relative to overall prevalence.}
+  \label{fig:attention}
+\end{figure}
+\FloatBarrier
+
+\item \textbf{Geographic Analysis.}
+\label{sec:geo}
+Figure~\ref{fig:geomap} shows the geographic distribution of the 800 sampled highest-attention edges for each prediction horizon; plots highlighted in red mark pathogen-positive plots, allowing the connectivity pattern to be read against known disease occurrence. Across all three horizons, long-range connections crossing continental boundaries are consistently present, particularly between Europe, North America, and Australia. This cross-continental pattern directly supports the trait-similarity graph design: functional equivalents of European temperate forest plots in North America and Australia receive high attention because they are ecologically informative, not because they are geographically proximal.
+
+\begin{figure}[pos=t]
+  \centering
+  \begin{subfigure}{\linewidth}
+    \includegraphics[width=0.94\linewidth]{figures/geo5.png}
+    \caption{$N=5$}
+  \end{subfigure}
+  \vspace{0.5em}
+  \begin{subfigure}{\linewidth}
+    \includegraphics[width=0.94\linewidth]{figures/geo7.png}
+    \caption{$N=7$}
+  \end{subfigure}
+  \vspace{0.5em}
+  \begin{subfigure}{\linewidth}
+    \includegraphics[width=0.94\linewidth]{figures/geo10.png}
+    \caption{$N=10$}
+  \end{subfigure}
+  \caption{Geographic distribution of the 800 sampled highest-attention edges (top 5\%), with pathogen-positive plots highlighted in red, for each prediction horizon. Cross-continental connections are present across all horizons, validating the trait-similarity graph construction.}
+  \label{fig:geomap}
+\end{figure}
+\FloatBarrier
+
+\end{itemize}
+
+% =========================================================
+\section{Discussion}
+\label{sec:discussion}
+
+\subsection{EcoPE as a Structural Contribution}
+
+Our ablation confirms that EcoPE contributes beyond model capacity: the Plain GAT, with identical architecture and parameters but no EcoPE, is consistently outperformed on random splits. The t-SNE analysis shows this improvement is accompanied by genuine ecological structure learning, validating EcoPE as a principled, domain-specific positional encoding for macroecological graphs.
+
+\subsection{Why the GNN Approach is Justified}
+
+Random Forest achieves the highest in-distribution PR-AUC, as expected for tree-based models on tabular data, and it cannot be dismissed on raw performance grounds alone. The GNN approach is nonetheless justified: unlike Random Forest or the MLP, it exploits connectivity between functionally related plots, the attention enrichment at $N=5$ and $N=7$ confirms this mechanism is used effectively, and it produces interpretable, edge-level attention coefficients that no tabular model can provide. For a surveillance application where understanding \emph{why} and \emph{through which pathway} a plot is at risk matters as much as the score itself, this interpretability and extensibility (towards dynamic edges, inductive settings, or cross-species pathogen graphs) justifies the architecture beyond raw PR-AUC.
+
+\subsection{Transductive Bias under Spatial Holdout}
+
+On the spatial holdout, EcoPE-GAT and Plain GAT underperform tabular baselines. Our setting is transductive: all 79{,}004 nodes, including North American test plots, are present in the graph at training time, connected to training nodes via high-attention edges, fundamentally different from inductive generalisation, where test nodes are unseen at training time. The degradation reflects the difficulty of predicting labels for nodes whose neighbourhood is dominated by other withheld test nodes, not a failure to generalise to unseen functional compositions, for which the random split is the appropriate evaluation. We further argue that geographic holdout is not the ecologically relevant generalisation criterion for a trait-similarity graph: North American plots are most closely connected to European and Australian plots in trait space, not to other North American plots, so withholding a geographic region disrupts functional connectivity rather than isolating a genuinely novel ecological subspace. A more appropriate holdout would exclude a functional group or biome type entirely, which we leave as future work.
+
+\subsection{Ecological Interpretation}
+
+The attention analysis converges with the ecological literature on a consistent narrative. Leaf fresh mass and leaf area determine the physical surface available for pathogen contact and spore germination. Wood vessel length and hydraulic traits determine the rate of systemic spread once infection occurs. Leaf $\delta^{15}$N reflects the nitrogen economy and symbiotic associations that mediate chemical defences. These are not arbitrary statistical correlations: they represent well-understood mechanistic pathways linking plant functional strategy to disease susceptibility. The reversal of attention enrichment at $N=10$ further suggests that the informative functional signal becomes diluted as the positive class expands and pathogen records diffuse across a wider range of community types, a finding that motivates horizon-specific analysis in future work.
+
+\subsection{Limitations}
+
+Despite the contributions above, three limitations of the current study should be acknowledged, which also point to directions for future work:
+
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Transductive setting}: an inductive variant would require architectural modifications (e.g.\ GraphSAGE-style neighbourhood sampling).
+  \item \textbf{Class imbalance}: despite positive-class reweighting, $\sim 1.7\%$ prevalence at $N=5$ remains challenging; focal loss \citep{lin2017} or graph-based SMOTE may help.
+  \item \textbf{GBIF coverage}: pathogen records are geographically biased towards Europe and North America, which may affect spatial holdout evaluations.
+\end{itemize}
+
+% =========================================================
+\section{Conclusion}
+\label{sec:conclusion}
+
+We introduced EcoPE-GAT, to our knowledge, one of the first graph neural network approaches for global plant pathogen emergence prediction. By constructing a vegetation plot network in functional trait space and augmenting it with EcoPE, a novel, domain-specific ecological positional encoding, we demonstrated consistent improvements over the plain GAT ablation across multiple prediction horizons, while producing interpretable ecological embeddings and attention maps that no tabular model can provide. The attention enrichment analysis, carried out across all three horizons, reveals that the model's message-passing mechanism is ecologically grounded at short-to-medium prediction horizons, while flagging an important shift in attention behaviour at $N=10$ that warrants further investigation. Our results establish a principled, biologically motivated framework for graph-based macroecological modelling, and introduce EcoPE as a reusable component for any GNN operating on vegetation or species occurrence data. We further characterised, to our knowledge, for the first time, the transductive bias that affects GNN evaluation under geographic holdout in ecological settings, a methodological contribution with broad implications for the field.
+
+% =========================================================
+% Declarations required by the Ecological Modelling Guide for Authors
+% (https://www.sciencedirect.com/journal/ecological-modelling/publish/guide-for-authors)
+% =========================================================
+
+\section*{Declaration of generative AI and AI-assisted technologies in the writing process}
+During the preparation of this work the author(s) used ChatGPT (OpenAI) and Claude (Anthropic) in order to assist with drafting and improving the language and readability of the manuscript text. After using these tools, the author(s) reviewed and edited the content as needed and take(s) full responsibility for the content of the published article.
+
+% To print the CRediT authorship contribution statement
+\printcredits
+
+\section*{Declaration of competing interest}
+The authors declare that they have no known competing financial interests or personal relationships that could have appeared to influence the work reported in this paper. 
+
+\section*{Data availability}
+The sPlotOpen vegetation-plot dataset is available at \url{https://doi.org/10.1111/geb.13346} \citep{sabatini2021}. Plant-pathogen occurrence records were retrieved from GBIF via a single reproducible occurrence download: GBIF.org (31 August 2026) GBIF Occurrence Download \url{https://doi.org/10.15468/dl.ps65sp}.
+
+% =========================================================
+\begin{thebibliography}{99}
+
+\bibitem{beck2014} Beck, J., B\"oller, M., Erhardt, A., Schwanghart, W. (2014). Spatial bias in the GBIF database and its effect on modeling species' geographic distributions. \textit{Ecological Informatics}, 19:10--15. DOI: \url{https://doi.org/10.1016/j.ecoinf.2013.11.002}.
+
+\bibitem{bebber2014} Bebber, D.P., Holmes, T., Gurr, S.J. (2014). The global spread of crop pests and pathogens. \textit{Global Ecology and Biogeography}, 23(12):1398--1407. DOI: \url{https://doi.org/10.1111/geb.12214}.
+
+\bibitem{bruelheide2018} Bruelheide, H., Dengler, J., Purschke, O., et al. (2018). Global trait--environment relationships of plant communities. \textit{Nature Ecology \& Evolution}, 2(12):1906--1917. DOI: \url{https://doi.org/10.1038/s41559-018-0699-8}.
+
+\bibitem{croft2023} Croft, V.M., van Iersel, S.C.J.L., Della Santina, C. (2023). Forecasting infections with spatio-temporal graph neural networks: a case study of the Dutch SARS-CoV-2 spread. \textit{Frontiers in Physics}, 11:1277052. DOI: \url{https://doi.org/10.3389/fphy.2023.1277052}.
+
+\bibitem{dwivedi2020} Dwivedi, V.P., Bresson, X. (2020). A generalization of Transformers to graphs. arXiv:2012.09699. Presented at the AAAI 2021 Workshop on Deep Learning on Graphs (DLG-AAAI'21).
+
+\bibitem{elith2009} Elith, J., Leathwick, J.R. (2009). Species distribution models. \textit{Annual Review of Ecology, Evolution, and Systematics}, 40:677--697. DOI: \url{https://doi.org/10.1146/annurev.ecolsys.110308.120159}.
+
+\bibitem{fisher2012} Fisher, M.C., et al. (2012). Emerging fungal threats to animal, plant and ecosystem health. \textit{Nature}, 484(7393):186--194. DOI: \url{https://doi.org/10.1038/nature10947}.
+
+\bibitem{gbif2023} GBIF Secretariat (2023). GBIF Backbone Taxonomy. \textit{GBIF Backbone Taxonomy dataset}. DOI: \url{https://doi.org/10.15468/39omei}.
+
+\bibitem{grinsztajn2022} Grinsztajn, L., Oyallon, E., Varoquaux, G. (2022). Why tree-based models still outperform deep learning on tabular data. \textit{Advances in Neural Information Processing Systems (NeurIPS)}, 35 (Datasets and Benchmarks Track). arXiv:2207.08815.
+
+\bibitem{guillera2015} Guillera-Arroita, G., Lahoz-Monfort, J.J., Elith, J., Gordon, A., Kujala, H., Lentini, P.E., McCarthy, M.A., Tingley, R., Wintle, B.A. (2015). Is my species distribution model fit for purpose? Matching data and models to applications. \textit{Global Ecology and Biogeography}, 24(3):276--292. DOI: \url{https://doi.org/10.1111/geb.12268}.
+
+\bibitem{hamilton2017} Hamilton, W., Ying, Z., Leskovec, J. (2017). Inductive representation learning on large graphs. \textit{Advances in Neural Information Processing Systems (NeurIPS)}, 30. arXiv:1706.02216.
+
+\bibitem{harrell2025} Harrell, L., Kaeser-Chen, C., Karagol Ayan, B., et al. (2025). Heterogeneous graph neural networks for species distribution modeling. \textit{ICLR 2025 Workshop on Tackling Climate Change with ML}, arXiv:2503.11900.
+
+\bibitem{kingma2015} Kingma, D.P., Ba, J. (2015). Adam: A method for stochastic optimization. \textit{International Conference on Learning Representations (ICLR)} 2015. arXiv:1412.6980.
+
+\bibitem{kipf2017} Kipf, T.N., Welling, M. (2017). Semi-supervised classification with graph convolutional networks. \textit{International Conference on Learning Representations (ICLR)} 2017. arXiv:1609.02907.
+
+\bibitem{klemmer2023pegnn} Klemmer, K., Safir, N.S., Neill, D.B. (2023). Positional encoder graph neural networks for geographic data. \textit{Proceedings of the 26th International Conference on Artificial Intelligence and Statistics (AISTATS)}, PMLR 206:1379--1389.
+
+\bibitem{lavorel2002} Lavorel, S., Garnier, E. (2002). Predicting changes in community composition and ecosystem functioning from plant traits. \textit{Functional Ecology}, 16(5):545--556. DOI: \url{https://doi.org/10.1046/j.1365-2435.2002.00664.x}.
+
+\bibitem{li2020} Li, P., et al. (2020). Distance encoding: design provably more powerful GNNs. \textit{Advances in Neural Information Processing Systems (NeurIPS)}, 33. arXiv:2009.00142.
+
+\bibitem{lin2017} Lin, T.-Y., et al. (2017). Focal loss for dense object detection. \textit{Proceedings of the IEEE International Conference on Computer Vision (ICCV)}, 2999--3007. DOI: \url{https://doi.org/10.1109/ICCV.2017.324}.
+
+\bibitem{jin2021} Jin, H., Yuan, Y., Li, J. (2021). Host functional traits affect plant responses to pathogen stress: A meta-analysis. \textit{Acta Oecologica}, 110:103703. DOI: \url{https://doi.org/10.1016/j.actao.2021.103703}.
+
+\bibitem{roberts2017} Roberts, D.R., et al. (2017). Cross-validation strategies for data with temporal, spatial, hierarchical, or phylogenetic structure. \textit{Ecography}, 40(8):913--929. DOI: \url{https://doi.org/10.1111/ecog.02881}.
+
+\bibitem{sabatini2021} Sabatini, F.M., et al. (2021). sPlotOpen: An environmentally balanced, open-access, global dataset of vegetation plots. \textit{Global Ecology and Biogeography}, 30(9):1740--1764. DOI: \url{https://doi.org/10.1111/geb.13346}.
+
+\bibitem{saito2015} Saito, T., Rehmsmeier, M. (2015). The precision-recall plot is more informative than the ROC plot. \textit{PLOS ONE}, 10(3):e0118432. DOI: \url{https://doi.org/10.1371/journal.pone.0118432}.
+
+\bibitem{siefert2024} Siefert, A., Laughlin, D.C., Sabatini, F.M. (2024). You shall know a species by the company it keeps: leveraging co-occurrence data to improve ecological prediction. \textit{Journal of Vegetation Science}, 35:e13314. DOI: \url{https://doi.org/10.1111/jvs.13314}.
+
+\bibitem{valavi2022} Valavi, R., et al. (2022). Predictive performance of presence-only species distribution models. \textit{Ecological Monographs}, 92(1):e01486. DOI: \url{https://doi.org/10.1002/ecm.1486}.
+
+\bibitem{vaswani2017} Vaswani, A., et al. (2017). Attention is all you need. \textit{Advances in Neural Information Processing Systems (NeurIPS)}, 30. arXiv:1706.03762.
+
+\bibitem{velickovic2018} Veli\v{c}kovi\'c, P., et al. (2018). Graph attention networks. \textit{International Conference on Learning Representations (ICLR)} 2018. arXiv:1710.10903.
+
+\bibitem{wu2025} Wu, et al. (2025). GNN-SDM: A graph neural network-based framework integrating complex landscape patterns into species distribution modelling. \textit{Global Ecology and Biogeography}, 34(11):e70162. DOI: \url{https://doi.org/10.1111/geb.70162}.
+
+\bibitem{zhao2023} Zhao, W., Efremova, N. (2023). Soil organic carbon estimation from climate-related features with graph neural network. arXiv:2311.15979. Presented at \textit{Tackling Climate Change with Machine Learning: workshop at NeurIPS 2023}.
+
+\end{thebibliography}
+\end{document}

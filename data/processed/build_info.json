@@ -1,0 +1,26 @@
+{
+ "splot": {
+  "n_header": 95104,
+  "n_cwm": 95104,
+  "n_header_without_cwm": 0,
+  "n_no_survey_year": 15019,
+  "n_no_coords": 0,
+  "survey_year_min": 1888,
+  "survey_year_max": 2015
+ },
+ "gbif_raw_records": 22129,
+ "gbif_raw_species": 27,
+ "variants": {
+  "unc-keep_bor-all": 11475,
+  "unc-keep_bor-no-ms": 8276,
+  "unc-drop_bor-all": 5553,
+  "unc-drop_bor-no-ms": 5538
+ },
+ "n_plots": 95104,
+ "n_eligible": {
+  "5": 44772,
+  "7": 44772,
+  "10": 44772
+ },
+ "python": "3.12.4 (tags/v3.12.4:8e8a4ba, Jun  6 2024, 19:30:16) [MSC v.1940 64 bit (AMD64)]"
+}

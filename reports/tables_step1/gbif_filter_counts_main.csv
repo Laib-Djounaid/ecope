@@ -1,0 +1,29 @@
+species,0_raw,1_species_resolved,2_status_present,3_valid_year,4_valid_coords,5_uncertainty_le_10000m_missing-keep,7_dedup_species_coord0.01_year,6_basis_of_record_no-ms
+Alternaria solani,77,77,77,77,77,76,49,65
+Blumeria graminis,1730,1730,1730,1730,1730,1725,614,712
+Botrytis cinerea,1280,1280,1050,1050,1050,1027,627,777
+Cercospora beticola,88,88,88,88,88,88,59,79
+Cochliobolus heterostrophus,67,67,67,67,67,67,4,4
+Colletotrichum lindemuthianum,78,78,78,78,78,78,3,4
+Erwinia amylovora,69,69,69,69,69,64,43,47
+Erysiphe necator,519,519,519,519,519,494,431,484
+Fusarium graminearum,1583,1583,1583,1583,1583,1582,209,255
+Fusarium oxysporum,1625,1625,1622,1622,1622,1618,189,313
+Hemileia vastatrix,83,83,83,83,83,80,67,78
+Peronospora farinosa,471,471,471,471,471,466,337,384
+Phakopsora pachyrhizi,99,99,99,99,99,97,65,94
+Phytophthora infestans,682,682,682,682,682,677,190,235
+Plasmodiophora brassicae,127,127,127,127,127,126,24,24
+Plasmopara viticola,423,423,423,423,423,409,271,294
+Pseudocercospora fijiensis,14,14,14,14,14,12,2,2
+Pseudomonas syringae,2041,2041,2041,2041,2041,2004,1376,1653
+Puccinia graminis,1982,1982,1760,1760,1760,1717,1369,1693
+Puccinia recondita,74,74,74,74,74,72,25,33
+Puccinia striiformis,453,453,453,453,453,446,220,259
+Pyricularia oryzae,1088,1088,1088,1088,1088,1088,34,34
+Rhizoctonia solani,4782,4782,4782,4782,4782,4782,93,117
+Sclerotinia sclerotiorum,452,452,452,452,452,449,246,276
+Ustilago maydis,1383,1383,1383,1383,1383,1383,1108,1336
+Venturia inaequalis,797,797,797,797,797,779,620,673
+Xanthomonas oryzae,62,62,62,62,62,62,1,1
+TOTAL,22129,22129,21674,21674,21674,21468,8276,9926

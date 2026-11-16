@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+data/processed/*.parquet
+*.pt
+logs/
+results/*
+!results/numbers.tex
+*.aux
+*.log
+*.out
+*.synctex.gz
+Guide for authors*.html
