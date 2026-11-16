@@ -67,7 +67,7 @@ class GNN(nn.Module):
     """input projection -> 2 graph layers -> MLP readout (one hidden layer of 64, ReLU)."""
 
     def __init__(self, conv: str, d_in: int, hidden: int, heads: int, dropout: float,
-                 d_ctx: int = 0, ecope_dim: int = 32):
+                 d_ctx: int = 0, ecope_dim: int = 32, edge_dim: int = 1):
         super().__init__()
         self.conv_type = conv
         self.ecope = EcoPE(d_ctx, 64, ecope_dim) if d_ctx else None
@@ -83,8 +83,8 @@ class GNN(nn.Module):
         elif conv == "gat":
             # heads split a fixed total width: each head has hidden // heads channels
             assert hidden % heads == 0
-            self.c1 = GATConv(hidden, hidden // heads, heads=heads, dropout=dropout, edge_dim=1)
-            self.c2 = GATConv(hidden, hidden // heads, heads=heads, dropout=dropout, edge_dim=1)
+            self.c1 = GATConv(hidden, hidden // heads, heads=heads, dropout=dropout, edge_dim=edge_dim)
+            self.c2 = GATConv(hidden, hidden // heads, heads=heads, dropout=dropout, edge_dim=edge_dim)
             d_out = hidden
         else:
             raise ValueError(conv)
@@ -97,7 +97,8 @@ class GNN(nn.Module):
             return layer(h, ei, edge_weight=ew)
         if self.conv_type == "sage":
             return layer(h, ei)
-        return layer(h, ei, edge_attr=ew.view(-1, 1), return_attention_weights=return_attention)
+        ea = ew.view(-1, 1) if ew.dim() == 1 else ew          # 1 or several edge features
+        return layer(h, ei, edge_attr=ea, return_attention_weights=return_attention)
 
     def embed_input(self, data):
         x = data["x"]
@@ -115,3 +116,31 @@ class GNN(nn.Module):
             return self.readout(self.act(h)).squeeze(-1), att
         h = self.act(self._conv(self.c2, h, ei, ew))
         return self.readout(h).squeeze(-1)
+
+
+# --------------------------------------------------------------------------- v2 graphs
+def geo_knn_graph(latlon_deg: np.ndarray, k: int, scale_km: float, R: float = 6371.0088
+                  ) -> tuple[torch.Tensor, torch.Tensor]:
+    """Transductive kNN graph by great-circle distance (BallTree, haversine), symmetrised.
+    Edge weight w = 1 / (1 + d_km / scale_km)."""
+    from sklearn.neighbors import BallTree
+    n = len(latlon_deg)
+    tree = BallTree(np.radians(latlon_deg), metric="haversine")
+    d, j = tree.query(np.radians(latlon_deg), k=k + 1)
+    src, dst = j[:, 1:].ravel(), np.repeat(np.arange(n), k)
+    ei = torch.as_tensor(np.vstack([src, dst]), dtype=torch.long)
+    ew = torch.as_tensor(d[:, 1:].ravel() * R, dtype=torch.float32)
+    ei, ew = to_undirected(ei, ew, num_nodes=n, reduce="min")
+    return ei, (1.0 / (1.0 + ew / scale_km)).float()
+
+
+def two_channel(ei_t, w_t, ei_g, w_g, n: int, which: str) -> tuple[torch.Tensor, torch.Tensor]:
+    """Edge attributes [w_trait, w_geo] (0 where the edge is absent from that graph).
+    which = 'trait' | 'geo' | 'combined' (union of both edge sets)."""
+    parts_e, parts_a = [], []
+    if which in ("trait", "combined"):
+        parts_e.append(ei_t); parts_a.append(torch.stack([w_t, torch.zeros_like(w_t)], 1))
+    if which in ("geo", "combined"):
+        parts_e.append(ei_g); parts_a.append(torch.stack([torch.zeros_like(w_g), w_g], 1))
+    ei, ea = coalesce(torch.cat(parts_e, 1), torch.cat(parts_a, 0), num_nodes=n, reduce="add")
+    return ei, ea

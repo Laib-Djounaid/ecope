@@ -113,3 +113,33 @@ changes, and how to go back. Newest entries at the bottom. Git tags mark decisio
   surveillance effort, prior presence and geography. Recommendation (Claude): evaluation-paper
   framing with EcoPE-GAT as a case study. Awaiting user decision (D9).
 - Caveats: single horizon, single seed, default hyperparameters, high fold variance.
+
+## D9 - EcoPE-GAT stays central; pre-registered test of EcoPE-GAT v2 (2026-11-16, user)
+**Pre-registration. Written and committed (tag `prereg-ecope-v2`) BEFORE the pilot was run.**
+
+- **Model (EcoPE-GAT v2):** EcoPE inputs = SoilClim PC1/PC2, lat/lon, biome one-hot, independent
+  effort (non-target Fungi records within 50 km BEFORE the survey year, log1p; DOI
+  10.15468/dl.4739rd). Node features = prior presence (P) or prior presence + traits (PT).
+  Graphs (transductive, k = 10): trait kNN (v1 reference), geo kNN (haversine), combined (union),
+  edge attributes [w_trait, w_geo].
+- **Primary variant (user choice): PT + combined graph** (`ecope_v2_PT_combined`). The verdicts
+  below apply to it alone. The other 5 variants (P/PT x trait/geo/combined, minus primary) are
+  secondary ablations, reported in full but without a verdict.
+- **Controls on the same folds:** GAT with the same variables concatenated, no encoder
+  (`gat_concat_<nodes>_<graph>`); LightGBM on feature set G (`G_lgbm`, same code path as pilot v2).
+- **Protocol:** N = 5; the same spatial 5-fold splits as pilot v2; seed 0; default
+  hyperparameters of the original paper (hidden 64, 4 heads, dropout 0.3, lr 1e-3, wd 1e-4,
+  balanced positive weight, max 200 epochs, early stopping patience 20 on inner-val PR-AUC);
+  training on the training part of each fold. Script `src/pilot_ecope_v2.py`.
+- **Statistic:** difference in pooled out-of-fold PR-AUC (all 5 test folds), 95% percentile CI
+  from 2,000 bootstrap resamples of the spatial blocks (seed 0).
+- **Criteria (fixed in advance):**
+  - EcoPE-GAT v2 is **competitive** if the CI lower bound of (v2 - G_lgbm) > -0.02
+    (non-inferiority), **superior** if the lower bound > 0.
+  - EcoPE **adds** if (v2 - GAT+concat, same nodes and graph) has a CI lower bound > 0 (same rule).
+- **Consequence (fixed in advance):** competitive -> method paper centred on EcoPE-GAT v2 (v1 as
+  ablation); otherwise -> evaluation paper with EcoPE-GAT v1/v2 as case studies. In both cases:
+  full tuning, 3 horizons, 5 seeds, all variants reported.
+- **Transparency note:** a smoke test (fold 0 only, 4 epochs, 4 configurations) was run to check the
+  code before this entry; its outputs were deleted and are not results. It confirmed that G_lgbm
+  reproduces pilot v2 exactly on fold 0 (PR-AUC 0.287).
