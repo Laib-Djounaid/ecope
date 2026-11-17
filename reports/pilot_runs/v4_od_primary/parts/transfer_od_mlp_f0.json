@@ -1,0 +1,1 @@
+{"setting": "transfer", "config": "od_mlp", "fold": 0, "n_test": 18310, "n_pos": 118, "chance": 0.0064445658110322225, "pr_auc": 0.005951033310809872, "roc_auc": 0.38911241484429737, "seconds": 49.125309467315674, "best_val_pr_auc": 0.5082424253090908, "epochs": 29, "best_epoch": 9}

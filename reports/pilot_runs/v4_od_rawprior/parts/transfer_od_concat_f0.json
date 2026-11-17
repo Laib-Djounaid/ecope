@@ -1,0 +1,1 @@
+{"setting": "transfer", "config": "od_concat", "fold": 0, "n_test": 18310, "n_pos": 118, "chance": 0.0064445658110322225, "pr_auc": 0.02824243520505986, "roc_auc": 0.771990481940283, "seconds": 76.29491066932678, "best_val_pr_auc": 0.5897459709420927, "epochs": 48, "best_epoch": 28, "det_a": -0.016565585508942604, "det_b": 0.7017422914505005}

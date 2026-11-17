@@ -1,0 +1,1 @@
+{"setting": "transfer", "config": "od_cloglog", "fold": 0, "n_test": 18310, "n_pos": 118, "chance": 0.0064445658110322225, "pr_auc": 0.013688557705927574, "roc_auc": 0.5575758295693395, "seconds": 33.981080532073975, "best_val_pr_auc": 0.5972939970676937, "epochs": 21, "best_epoch": 1, "det_a": -0.0009999999310821295, "det_b": 0.6936473250389099}

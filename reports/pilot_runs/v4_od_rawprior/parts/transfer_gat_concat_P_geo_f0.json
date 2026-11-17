@@ -1,0 +1,1 @@
+{"setting": "transfer", "config": "gat_concat_P_geo", "fold": 0, "n_test": 18310, "n_pos": 118, "chance": 0.0064445658110322225, "pr_auc": 0.18939895579921573, "roc_auc": 0.7811559001535411, "seconds": 139.9067816734314, "best_val_pr_auc": 0.5364259023944051, "epochs": 66, "best_epoch": 46}

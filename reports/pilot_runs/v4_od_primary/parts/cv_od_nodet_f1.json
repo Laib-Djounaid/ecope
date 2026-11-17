@@ -1,0 +1,1 @@
+{"setting": "cv", "config": "od_nodet", "fold": 1, "n_test": 7266, "n_pos": 388, "chance": 0.05339939443985687, "pr_auc": 0.4569343765567396, "roc_auc": 0.8720933021167145, "seconds": 143.6910252571106, "best_val_pr_auc": 0.42865729747492176, "epochs": 93, "best_epoch": 74}

@@ -234,3 +234,54 @@ identifiability rationale: `reports/literature_od.md`.
 - **Transparency note:** two smoke tests were run before this entry to check the code (fold 0 with
   3 epochs; all settings with 1 epoch, incl. the test computations). Their outputs were deleted and
   are not results.
+
+## Pilot v4 (EcoPE-OD-GNN, pre-registered in D11) - primary run `v4_od_primary` (2026-11-17)
+
+Run as pre-registered (N = 5, seed 0, defaults, `--prior-mode ratio`), finished about 16:30 after one
+PC sleep (resumed from per-part files). Outputs in `reports/pilot_runs/v4_od_primary/`.
+
+| setting | G_lgbm | gat_concat_P_geo | od_cloglog (primary) | od_concat | od_mlp | od_nodet |
+|---|---|---|---|---|---|---|
+| CV fold-mean PR-AUC | **0.467** | 0.323 | 0.351 | 0.358 | 0.367 | 0.341 |
+| Transfer PR-AUC (chance 0.006) | 0.040 | **0.189** | 0.014 | 0.019 | 0.006 | 0.007 |
+| Transfer ROC-AUC | 0.788 | 0.781 | 0.558 | 0.699 | 0.389 | 0.508 |
+
+Pre-registered verdicts:
+- **(a) spatial CV: FAILED.** od_cloglog - G_lgbm = -0.116 [-0.134, +0.047] (not competitive);
+  vs gat_concat_P_geo +0.028 [-0.058, +0.078] (not shown competitive). EcoPE vs concat -0.008
+  [-0.058, +0.056], detection branch vs none +0.010 [-0.048, +0.104], cloglog vs MLP -0.016
+  [-0.110, +0.057]: no component shown to add.
+- **(b) effort transfer (main test): FAILED.** od_cloglog - G_lgbm = -0.027 [-0.145, +0.018];
+  vs gat_concat_P_geo -0.176 [-0.410, +0.017]. The OD models are near chance on low-effort blocks
+  (median log effort there = 0, so the detection branch is almost constant and ranking comes from
+  the presence branch alone). gat_concat_P_geo transfers best.
+- **(c) effort dependence: SUPPORTED as pre-registered.** |rho| of P(present) with log effort 0.094
+  vs 0.429 (G_lgbm), 0.344 (gat_concat), 0.369 (G_lgbm effort-standardised); differences -0.335
+  [-0.472, -0.122], -0.250 [-0.405, -0.063], -0.274 [-0.415, -0.052]. Caveat: the presence branch
+  receives no effort input by construction and an effort-normalised prior, so low |rho| is partly
+  by design and does not show the presence output is a better estimate of occurrence; given (b),
+  the presence output does not rank low-effort plots well.
+
+Consequence under D11: the claim "improves transfer to low-effort regions" is not supported; the
+claim "presence output less effort-dependent" passes its pilot criterion with the caveat above.
+No tuning started. Secondary run (`--prior-mode raw`, no verdict) in progress.
+
+### Pilot v4 - secondary run `v4_od_rawprior` (raw prior in the OD presence branch; no verdict)
+
+| setting | G_lgbm | gat_concat_P_geo | od_cloglog | od_concat | od_mlp | od_nodet |
+|---|---|---|---|---|---|---|
+| CV fold-mean PR-AUC | **0.467** | 0.323 | 0.357 | 0.369 | 0.378 | 0.386 |
+| Transfer PR-AUC | 0.040 | **0.189** | 0.010 | 0.028 | 0.006 | 0.006 |
+| Transfer ROC-AUC | 0.788 | 0.781 | 0.557 | 0.772 | 0.447 | 0.504 |
+
+Same pattern as the primary run: od_cloglog - G_lgbm in CV -0.110 [-0.146, +0.067], in transfer
+-0.031 [-0.154, +0.008]; vs gat_concat in transfer -0.180 [-0.413, +0.009]; |rho| of P(present)
+0.040 (differences vs refs all with CI < 0). The prior encoding does not change the conclusions.
+
+Risk maps (`risk_maps.png` in each run folder, script `src/pilot_od_maps.py`): percentile ranks of
+out-of-fold predictions. Visually, all models concentrate high ranks where effort and observed
+positives are (Europe, eastern Australia, western USA); the od_cloglog presence map spreads
+high ranks to some low-effort areas (S. America, S. Africa, Siberia), which is what lower effort
+dependence looks like, but (b) shows those ranks are not validated by the low-effort labels.
+
+Status: STOP before any tuning; awaiting the user's decision.

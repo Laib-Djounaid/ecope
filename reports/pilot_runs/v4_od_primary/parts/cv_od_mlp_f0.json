@@ -1,0 +1,1 @@
+{"setting": "cv", "config": "od_mlp", "fold": 0, "n_test": 7408, "n_pos": 526, "chance": 0.07100431965442765, "pr_auc": 0.5918787385845631, "roc_auc": 0.9590874911462426, "seconds": 160.13788723945618, "best_val_pr_auc": 0.49403568871134507, "epochs": 107, "best_epoch": 87}

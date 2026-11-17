@@ -1,0 +1,1 @@
+{"setting": "transfer", "config": "od_nodet", "fold": 0, "n_test": 18310, "n_pos": 118, "chance": 0.0064445658110322225, "pr_auc": 0.007254883442963192, "roc_auc": 0.507795380349716, "seconds": 65.42663288116455, "best_val_pr_auc": 0.6023244624073664, "epochs": 38, "best_epoch": 18}

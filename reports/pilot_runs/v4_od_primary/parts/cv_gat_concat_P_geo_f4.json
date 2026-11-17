@@ -1,0 +1,1 @@
+{"setting": "cv", "config": "gat_concat_P_geo", "fold": 4, "n_test": 7453, "n_pos": 420, "chance": 0.05635314638400644, "pr_auc": 0.22959583240097264, "roc_auc": 0.8204187063706472, "seconds": 36.80309748649597, "best_val_pr_auc": 0.20940201902599712, "epochs": 23, "best_epoch": 3}

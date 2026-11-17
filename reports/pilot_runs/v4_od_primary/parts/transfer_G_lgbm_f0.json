@@ -1,0 +1,1 @@
+{"setting": "transfer", "config": "G_lgbm", "fold": 0, "n_test": 18310, "n_pos": 118, "chance": 0.0064445658110322225, "pr_auc": 0.04025652817167868, "roc_auc": 0.7884644768421211, "seconds": 0.32825779914855957}
