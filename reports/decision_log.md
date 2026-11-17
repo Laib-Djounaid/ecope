@@ -285,3 +285,65 @@ high ranks to some low-effort areas (S. America, S. Africa, Siberia), which is w
 dependence looks like, but (b) shows those ranks are not validated by the low-effort labels.
 
 Status: STOP before any tuning; awaiting the user's decision.
+
+## D12 - EcoPE-GAT reframed; confirmatory target = transfer to low-effort regions (user, 2026-11-17)
+
+(The user's text calls it "D11"; D11 is already the OD pre-registration, so it is logged as D12.)
+EcoPE-GAT = GAT on a geographic graph + ecological position encoding (SoilClim PC1/PC2, coordinates,
+biome) before message passing, prior presence as node feature; encoder form (identity/concat,
+linear, MLP) and graph (geo, trait, combined) become tested choices; every variant and every
+pre-registered failure (v1, v2, OD) is reported. Before pre-registration: B1 add the reference
+"G_lgbm + neighbourhood"; B2 exploratory transfer CIs; B3 hold-out counts; E check the repository
+for the GBIF password. Pre-registration (H1-H3) to be shown to the user before any tuning.
+
+### D12 checks (2026-11-17, before any pre-registration)
+
+- **E. GBIF password:** the credential string and the GBIF user name occur 0 times in the working
+  tree (tracked and untracked files, logs) and 0 times in `git log --all -p` (all branches, tags).
+  No purge needed. (Search done by script; the string is never printed or stored.)
+- **B3. Hold-out low-effort part** (same rule as the development transfer split: block-median
+  log1p prior effort <= development threshold = 0, i.e. blocks with no prior non-target fungal
+  record), counts only, no prediction: 3,629 plots, 27 blocks, positives 97 / 134 / 139 at
+  N = 5 / 7 / 10 (`reports/holdout_transfer_counts.json`; `tools/holdout_transfer_counts.py`).
+  High-effort part: 4,291 plots, 65 blocks. 27 blocks limits the block bootstrap.
+- **NEW: temporal leakage through graph neighbours** (`tools/neighbour_time_leak.py`,
+  `reports/neighbour_time_leak.json`). A node's prior presence counts target records before ITS
+  OWN survey year; a neighbour surveyed later can carry records from the receiving plot's label
+  window. On the geo kNN graph (k = 10, symmetrised) used in pilots v3 and v4: 15.2% of edges
+  come from a later-surveyed neighbour, 0.5% carry window records; but 30.2% of positive plots vs
+  0.5% of negative plots have such a neighbour (P(y=1 | leaky neighbour) = 0.77; the indicator
+  alone gives PR-AUC 0.27 at prevalence 0.05, and 0.11 on the transfer test set at prevalence
+  0.006). **All GNN results of pilots v3 and v4 that use the geo graph are affected** (the trait
+  graph of v1/v3 likewise passes neighbours' priors, not audited yet). Fix: time-causal graph,
+  messages j -> i only if survey_year[j] <= survey_year[i] (`graph_models.time_causal`; keeps
+  389,780 of 459,584 directed edges). The 04_graph hybrid (cross-fitted neighbour labels) has the
+  same problem and must be made time-causal or dropped.
+- **B1. G_lgbm + neighbourhood** (`src/neighbour_features.py`): time-safe aggregates over the
+  causal geo kNN neighbours (mean log prior count, max prior_any, mean log effort, number of
+  causal neighbours) + target records within 100 km and in the 50-100 km ring before the survey
+  year. No labels used.
+- **B2. Exploratory transfer** (`src/explore_d12.py`, `reports/pilot_runs/x1_d12_transfer/`;
+  N = 5, defaults; LightGBM 1 fit, GATs 5 seeds, tests on the seed-mean score; transfer test
+  chance 0.006). A single seed proved unstable (seed 0 of the leaky concat GAT stopped at epoch 4,
+  PR-AUC 0.006, while v4 seed 0 had given 0.189).
+
+  | model | PR-AUC (seed-mean score) | per-seed range |
+  |---|---|---|
+  | G_lgbm | 0.040 | - |
+  | G_lgbm + neighbourhood | 0.052 | - |
+  | gat_concat_P_geo, original (leaky) graph | 0.243 | 0.006 - 0.285 |
+  | GAT prior only, leaky graph | 0.189 | 0.168 - 0.190 |
+  | gat_concat_P_geo, **causal** graph | **0.011** | 0.006 - 0.032 |
+  | GAT prior only, **causal** graph | 0.077 | 0.071 - 0.080 |
+
+  CIs (2,000 block bootstraps): leaky concat - G_lgbm +0.203 [+0.001, +0.382]; - G_lgbm_nbr
+  +0.191 [-0.000, +0.351]. **Causal** concat - G_lgbm -0.029 [-0.150, +0.009]; - G_lgbm_nbr
+  -0.041 [-0.152, +0.010]; - causal prior-only GAT -0.065 [-0.222, +0.028]. Extra (not asked,
+  exploratory): causal prior-only GAT - G_lgbm +0.036 [-0.053, +0.131]; - G_lgbm_nbr +0.024
+  [-0.042, +0.099].
+  **Reading:** the transfer advantage of the geo GAT seen in pilot v4 was produced by the temporal
+  leakage; with a causal graph EcoPE-GAT (best current configuration) is not better than G_lgbm or
+  G_lgbm + neighbourhood in transfer, and adding the ecological context makes it worse than the
+  prior-only GAT. The premise of H1/H2 is not supported by the exploratory data.
+
+Status: pre-registration NOT written; no tuning. Awaiting the user's decision.

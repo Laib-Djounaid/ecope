@@ -1,0 +1,1 @@
+{"config": "gat_P_geo_noctx_leaky", "seed": 2, "pr_auc": 0.18546709416845322, "roc_auc": 0.6163856714815974, "seconds": 32.90810179710388, "best_val_pr_auc": 0.40894908353038706, "epochs": 22, "best_epoch": 2}

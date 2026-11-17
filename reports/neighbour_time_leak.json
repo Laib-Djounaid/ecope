@@ -1,0 +1,16 @@
+{
+ "edges": 459584,
+ "frac_edges_neighbour_surveyed_later": 0.15188518312212784,
+ "frac_edges_with_window_records_in_neighbour_prior": 0.005187299818966718,
+ "frac_plots_with_any_leaky_neighbour": 0.02005318571583632,
+ "P(leaky neighbour | y=1)": 0.3017057569296375,
+ "P(leaky neighbour | y=0)": 0.004946248856358646,
+ "P(y=1 | leaky neighbour)": 0.7658998646820027,
+ "P(y=1 | no leaky neighbour)": 0.036275025614044804,
+ "ROC_of_leak_indicator_alone": 0.6483797540366394,
+ "PR_of_leak_indicator_alone": 0.2666239941947502,
+ "prevalence": 0.05090632801476175,
+ "test_low: P(leaky | y=1)": 0.1440677966101695,
+ "test_low: P(leaky | y=0)": 0.00032981530343007914,
+ "test_low: PR_of_leak_indicator_alone": 0.1120010045611746
+}

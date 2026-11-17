@@ -1,0 +1,1 @@
+{"config": "gat_concat_P_geo_leaky", "seed": 2, "pr_auc": 0.28515052540890806, "roc_auc": 0.8064519885813097, "seconds": 86.93612051010132, "best_val_pr_auc": 0.4863622547689625, "epochs": 59, "best_epoch": 39}

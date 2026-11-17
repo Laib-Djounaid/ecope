@@ -1,0 +1,1 @@
+{"config": "gat_P_geo_noctx_causal", "seed": 1, "pr_auc": 0.07629562838213756, "roc_auc": 0.5166528777782747, "seconds": 191.03734016418457, "best_val_pr_auc": 0.5353341535883049, "epochs": 143, "best_epoch": 123}

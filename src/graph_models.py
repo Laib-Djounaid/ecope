@@ -188,3 +188,15 @@ class ODGNN(nn.Module):
         log_p = nn.functional.logsigmoid(self.presence(data)) + self.log_p_det(data)
         log_p = log_p.clamp(max=-1e-7)
         return log_p - torch.log(-torch.expm1(log_p))                       # logit(P(reported))
+
+
+def time_causal(ei: torch.Tensor, ew: torch.Tensor, years: np.ndarray) -> tuple[torch.Tensor, torch.Tensor]:
+    """Keep only messages j -> i with survey_year[j] <= survey_year[i] (decision D12).
+
+    A node's prior presence counts target records before ITS OWN survey year. A neighbour surveyed
+    later can therefore carry records from the receiving plot's label window (temporal leakage,
+    tools/neighbour_time_leak.py). With this filter every quantity reaching plot i, also over
+    several hops, predates year_i."""
+    yr = torch.as_tensor(np.asarray(years), dtype=torch.long)
+    keep = yr[ei[0]] <= yr[ei[1]]
+    return ei[:, keep], ew[keep]

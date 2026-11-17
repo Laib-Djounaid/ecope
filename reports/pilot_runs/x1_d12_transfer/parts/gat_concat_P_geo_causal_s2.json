@@ -1,0 +1,1 @@
+{"config": "gat_concat_P_geo_causal", "seed": 2, "pr_auc": 0.010725557945190613, "roc_auc": 0.6875121118614254, "seconds": 84.66208982467651, "best_val_pr_auc": 0.4548206373164869, "epochs": 63, "best_epoch": 43}

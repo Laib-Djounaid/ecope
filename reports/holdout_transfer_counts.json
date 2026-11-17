@@ -1,0 +1,28 @@
+{
+ "threshold": 0.0,
+ "holdout_low": {
+  "plots": 3629,
+  "blocks": 27,
+  "pos_N5": 97,
+  "pos_N7": 134,
+  "pos_N10": 139
+ },
+ "holdout_high": {
+  "plots": 4291,
+  "blocks": 65,
+  "pos_N5": 258,
+  "pos_N7": 349,
+  "pos_N10": 423
+ },
+ "dev_test_low_for_comparison": {
+  "plots": 18310,
+  "blocks": 91,
+  "pos_N5": 118,
+  "pos_N7": 243,
+  "pos_N10": 281,
+  "prev_N5": 0.0064,
+  "prev_N7": 0.0133,
+  "prev_N10": 0.0153,
+  "median_log_effort": 0.0
+ }
+}
