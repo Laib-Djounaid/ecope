@@ -123,3 +123,22 @@ holdout:
   fraction: 0.15          # target share of plots, per continent x effort-tercile stratum
   seed: 20261117
   splits_file: splits_v2.parquet
+
+d13:
+  # Pre-registration D13 (reports/preregistration_D13.md, tag prereg-D13)
+  primary_horizon: 5
+  tuning_horizon: 5          # hyperparameters reused for N = 7 and 10
+  horizons: [5, 7, 10]
+  seeds: [0, 1, 2, 3, 4]
+  n_trials: 30
+  n_boot: 2000
+  alldev_inner_seed_offset: 500   # inner validation of the whole development set: split_seed + 500
+  max_epochs: 200
+  patience: 20
+  gnn_space:
+    encoder: [cat, [identity, linear, mlp]]   # EcoPE models only
+    hidden: [cat, [64, 128]]
+    heads: [cat, [2, 4]]
+    dropout: [float, 0.1, 0.5]
+    lr: [float, 1.0e-4, 1.0e-2, true]
+    weight_decay: [float, 1.0e-6, 1.0e-3, true]

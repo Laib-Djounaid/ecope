@@ -67,11 +67,22 @@ class GNN(nn.Module):
     """input projection -> 2 graph layers -> MLP readout (one hidden layer of 64, ReLU)."""
 
     def __init__(self, conv: str, d_in: int, hidden: int, heads: int, dropout: float,
-                 d_ctx: int = 0, ecope_dim: int = 32, edge_dim: int = 1):
+                 d_ctx: int = 0, ecope_dim: int = 32, edge_dim: int = 1, ecope_form: str = "mlp"):
         super().__init__()
         self.conv_type = conv
-        self.ecope = EcoPE(d_ctx, 64, ecope_dim) if d_ctx else None
-        d0 = d_in + (ecope_dim if d_ctx else 0)
+        # ecological position encoder applied BEFORE message passing (D13: form is tuned)
+        #   mlp = EcoPE (v1 form, 64 -> 32); linear = Linear(d_ctx, 32); identity = raw concatenation
+        if not d_ctx:
+            self.ecope, d_enc = None, 0
+        elif ecope_form == "mlp":
+            self.ecope, d_enc = EcoPE(d_ctx, 64, ecope_dim), ecope_dim
+        elif ecope_form == "linear":
+            self.ecope, d_enc = nn.Linear(d_ctx, ecope_dim), ecope_dim
+        elif ecope_form == "identity":
+            self.ecope, d_enc = nn.Identity(), d_ctx
+        else:
+            raise ValueError(ecope_form)
+        d0 = d_in + d_enc
         self.inp = nn.Sequential(nn.Linear(d0, hidden), nn.LayerNorm(hidden), nn.GELU())
         self.drop = nn.Dropout(dropout)
         if conv == "gcn":

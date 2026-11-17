@@ -18,11 +18,13 @@ from common import p, variant_name
 from graph_models import geo_knn_graph, time_causal
 
 
-def neighbour_block(e: pd.DataFrame, blk: dict, cfg: dict) -> pd.DataFrame:
+def neighbour_block(e: pd.DataFrame, blk: dict, cfg: dict, causal: bool = True) -> pd.DataFrame:
+    """causal=False (D13, H5 only): kNN aggregates over ALL neighbours, incl. later-surveyed ones."""
     R, k, B = cfg["spatial"]["earth_radius_km"], cfg["graph"]["k"], cfg["spatial"]["buffer_km"]
     years = e["survey_year"].to_numpy().astype(int)
     ei, ew = geo_knn_graph(e[["Latitude", "Longitude"]].to_numpy(), k, B, R)
-    ei, _ = time_causal(ei, ew, years)
+    if causal:
+        ei, _ = time_causal(ei, ew, years)
     src, dst = ei.numpy()
     n = len(e)
     deg = np.bincount(dst, minlength=n).astype(float)
