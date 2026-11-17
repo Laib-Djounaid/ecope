@@ -359,3 +359,12 @@ causal rule + diagnostic. Full tuning only for the H1-H3 models.
 Prepared (not frozen): `reports/preregistration_D13_DRAFT.md`, `reports/literature_leakage.md`
 (references verified via Crossref / arXiv API), `reports/paper_plan_D13.md`. Awaiting approval
 of the pre-registration before any tuning.
+
+### D13 pre-registration approved and frozen (2026-11-17)
+
+The user approved the draft with: (1) effort as a dated node feature; (2) tuning on N = 5,
+hyperparameters reused for N = 7 and 10; (3) neighbour-label hybrid removed from the confirmatory
+analysis (illustration only, leaky vs strict t_j + N <= t_i). Added: H1b (rank reversal), H5
+(scope: leaky vs causal neighbourhood features in LightGBM; framing widened if supported), and the
+cost of the causal rule (15.2% edges removed, 232 isolated nodes = 0.6%, sensitivity excluding
+isolated nodes). Frozen text: `reports/preregistration_D13.md`, tag `prereg-D13`.
