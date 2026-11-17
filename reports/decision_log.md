@@ -347,3 +347,15 @@ for the GBIF password. Pre-registration (H1-H3) to be shown to the user before a
   prior-only GAT. The premise of H1/H2 is not supported by the exploratory data.
 
 Status: pre-registration NOT written; no tuning. Awaiting the user's decision.
+
+## D13 - option 2: paper centred on temporal leakage through neighbours (user, 2026-11-17)
+
+The paper is centred on the methodological finding (temporal leakage through graph neighbours in
+graph SDMs), with EcoPE-GAT (v1, v2, OD, geo GAT) as the central case study; every variant and
+pre-registered failure is reported. Hypotheses requested: H1 leaky > causal on the sealed
+hold-out in transfer and in spatial evaluation; H2 EcoPE-GAT_causal vs G_lgbm_nbr (reported as
+is); H3 EcoPE-GAT_causal vs no-context GAT (as is); H4 sensitivity / dose-response. Formal
+causal rule + diagnostic. Full tuning only for the H1-H3 models.
+Prepared (not frozen): `reports/preregistration_D13_DRAFT.md`, `reports/literature_leakage.md`
+(references verified via Crossref / arXiv API), `reports/paper_plan_D13.md`. Awaiting approval
+of the pre-registration before any tuning.
