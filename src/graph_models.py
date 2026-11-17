@@ -144,3 +144,47 @@ def two_channel(ei_t, w_t, ei_g, w_g, n: int, which: str) -> tuple[torch.Tensor,
         parts_e.append(ei_g); parts_a.append(torch.stack([torch.zeros_like(w_g), w_g], 1))
     ei, ea = coalesce(torch.cat(parts_e, 1), torch.cat(parts_a, 0), num_nodes=n, reduce="add")
     return ei, ea
+
+
+# --------------------------------------------------------------------------- occupancy-detection
+class ODGNN(nn.Module):
+    """EcoPE-OD-GNN: P(reported) = P(present) x P(detected | present).
+
+    presence  : GNN (GAT + optional EcoPE) on the node features and ecological context;
+                it never receives effort.
+    detection : depends ONLY on the standardised log effort z (data['det'], shape [n, 1]):
+      'cloglog' p_det = 1 - exp(-exp(a + softplus(b) * z))   monotone increasing, -> 1 at high
+                effort (Poisson-thinning / effort-as-exposure form; anchors the scale)
+      'mlp'     p_det = sigmoid(MLP(z))                       free small MLP (no constraint)
+      'none'    p_det = 1                                     presence branch alone
+    forward() returns logit(P(reported)) so the standard BCE-with-logits trainer applies
+    (use pos_weight = 1: the product is a likelihood only without class weighting).
+    """
+
+    def __init__(self, presence: GNN, detection: str = "cloglog", hidden: int = 8):
+        super().__init__()
+        self.presence, self.detection = presence, detection
+        if detection == "cloglog":
+            self.a = nn.Parameter(torch.zeros(1))
+            self.b_raw = nn.Parameter(torch.zeros(1))
+        elif detection == "mlp":
+            self.det_mlp = nn.Sequential(nn.Linear(1, hidden), nn.Tanh(), nn.Linear(hidden, 1))
+        elif detection != "none":
+            raise ValueError(detection)
+
+    def log_p_det(self, data):
+        z = data["det"].view(-1)
+        if self.detection == "cloglog":
+            rate = torch.exp(self.a + nn.functional.softplus(self.b_raw) * z)
+            return torch.log((-torch.expm1(-rate)).clamp(min=1e-12))       # log(1 - exp(-rate))
+        if self.detection == "mlp":
+            return nn.functional.logsigmoid(self.det_mlp(z.view(-1, 1)).view(-1))
+        return torch.zeros_like(z)
+
+    def presence_logit(self, data):
+        return self.presence(data)
+
+    def forward(self, data):
+        log_p = nn.functional.logsigmoid(self.presence(data)) + self.log_p_det(data)
+        log_p = log_p.clamp(max=-1e-7)
+        return log_p - torch.log(-torch.expm1(log_p))                       # logit(P(reported))

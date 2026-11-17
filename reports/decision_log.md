@@ -186,3 +186,51 @@ changes, and how to go back. Newest entries at the bottom. Git tags mark decisio
   inner validation. **Effort-transfer split:** development blocks with block-median log effort
   above the development median (= 0) train (87 blocks, 1,758 positives at N5); the others are the
   transfer test (91 blocks, median effort 0, 118 positives at N5, 281 at N10).
+
+## D11 - Pre-registration of the EcoPE-OD-GNN pilot (2026-11-17)
+**Written and committed (tag `prereg-od`) BEFORE the pilot was run.** Literature and
+identifiability rationale: `reports/literature_od.md`.
+
+- **Data:** development set only (splits_v2; the sealed hold-out is never loaded). N = 5, seed 0,
+  default hyperparameters (hidden 64, 4 heads, dropout 0.3, lr 1e-3, wd 1e-4, max 200 epochs,
+  early stopping patience 20 on inner-validation PR-AUC). Geo kNN graph (haversine, k = 10),
+  transductive. Script `src/pilot_od.py`.
+- **Primary model `od_cloglog` (user choices, AskUserQuestion 2026-11-17):**
+  presence = EcoPE-GAT on the geo graph; node features = **effort-normalised prior presence**
+  (target-group ratio: prior target records / (prior target + prior non-target fungal + 1), plus
+  an any-prior flag) + traits + plot attributes; EcoPE context = SoilClim PC1/PC2, lat/lon, biome
+  one-hot (**no effort**). Detection = **monotone cloglog** in standardised log1p(independent prior
+  effort) only: p_det = 1 - exp(-exp(a + softplus(b) z)). P(reported) = P(present) x p_det;
+  unweighted BCE (likelihood). No country/dataset in detection.
+- **Identifiability (stated limits):** single label per plot -> separation relies on covariate
+  separation (effort only in detection; no effort, and effort-normalised prior, in presence) and
+  on the monotone, saturating detection form (Lele et al. 2012; Knape & Korner-Nievergelt 2015).
+  P(present) is a model-based quantity, not observed occurrence.
+- **References / variants on the same splits:** `G_lgbm` (feature set G, raw prior);
+  `gat_concat_P_geo` (best pilot-v3 model; raw prior + context incl. effort, concatenated,
+  class-weighted as in v3); `od_concat` (primary without the EcoPE encoder); `od_nodet` (presence
+  branch only, no effort anywhere); `od_mlp` (detection = free MLP). Secondary run with **raw**
+  prior presence in the OD presence branch (`--prior-mode raw`): reported, no verdict.
+- **Statistics and criteria (fixed in advance; CI = 95% percentile, 2,000 block-bootstrap reps,
+  seed 0):**
+  - **(a) spatial CV**, statistic = **mean over the 5 folds of PR-AUC** (blocks resampled within
+    each test fold). `od_cloglog` vs G_lgbm and vs gat_concat_P_geo: competitive if the CI lower
+    bound > -0.02, superior if > 0. Component tests (same rule, lower bound > 0 = "adds"):
+    vs od_concat (EcoPE adds), vs od_nodet (detection branch adds), vs od_mlp (constraint adds).
+  - **(b) effort transfer (MAIN test of the contribution)**: train on high-effort blocks, test on
+    low-effort blocks (91 blocks, 118 positives at N5 -> low power, stated in advance); statistic =
+    PR-AUC on the transfer test set (blocks resampled). **Contribution supported if `od_cloglog` -
+    G_lgbm AND `od_cloglog` - gat_concat_P_geo both have CI lower bound > 0.** Component
+    comparisons as in (a), reported without verdict.
+  - **(c) effort dependence**: Spearman rho with log effort on development out-of-fold predictions.
+    Supported if |rho(P(present) of od_cloglog)| - |rho(ref)| has CI upper bound < 0 for ref =
+    G_lgbm score and ref = gat_concat_P_geo score. Also reported vs G_lgbm with effort set to the
+    training median (effort-standardised, Warton et al. 2013), no verdict. Risk maps of P(present)
+    and of naive scores are produced from the same out-of-fold predictions.
+- **Decision rule for the full run:** whatever the outcome, the full tuning (3 horizons,
+  5 seeds) reports all variants; the claim "EcoPE-OD-GNN improves transfer to low-effort regions"
+  requires (b), and "its presence output is less effort-dependent" requires (c). A final single
+  evaluation on the sealed hold-out decides the confirmatory claims.
+- **Transparency note:** two smoke tests were run before this entry to check the code (fold 0 with
+  3 epochs; all settings with 1 epoch, incl. the test computations). Their outputs were deleted and
+  are not results.
