@@ -117,3 +117,9 @@ effort:
   # Independent effort layer (src/01c_effort_layer.py): GBIF API counts of non-target Fungi.
   cell_deg: 0.5
   api_workers: 2
+
+holdout:
+  # Sealed confirmatory test set (decision D10). Never used in pilots or tuning.
+  fraction: 0.15          # target share of plots, per continent x effort-tercile stratum
+  seed: 20261117
+  splits_file: splits_v2.parquet

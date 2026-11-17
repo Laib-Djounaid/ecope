@@ -164,3 +164,25 @@ changes, and how to go back. Newest entries at the bottom. Git tags mark decisio
   between folds (GNNs trained with class weights and variable early stopping). Fold-mean of the
   primary: 0.380 vs G 0.421 (per-fold diffs +0.078, -0.146, -0.005, -0.222, +0.095).
   Any alternative statistic for the full run must be specified BEFORE that run.
+
+## D10 - Method contribution: occupancy-detection GNN; sealed confirmatory hold-out (2026-11-17, user)
+- **User decision:** no evaluation paper; develop a methodological contribution, a GNN that
+  separates presence from detection (EcoPE-OD-GNN). **This overrides the consequence that D9 fixed
+  in advance** (pilot v3: EcoPE-GAT v2 not competitive). Disclosure required in the paper: EcoPE-GAT
+  v1/v2 failed their pre-registered tests, and the OD model was designed after seeing pilots v1-v3.
+- **Step 0, sealed confirmatory hold-out** (`src/02b_holdout_splits.py`, created BEFORE any OD
+  model code was run): random spatial blocks, stratified by continent x tercile of block-median
+  log1p(independent prior effort), seed 20261117, target 15% of plots per stratum.
+  Result: 7,920 plots (17.7%; large blocks cannot be split), 92 blocks, all 6 continents;
+  positives N5/N7/N10 = 355/483/562. SHA-256 of sorted plot ids:
+  31e674c06b13b0ac4b5afb0fc3f0c66af44c9e7e3ab05d464cbe4c4ff3cd3a7f (`holdout_manifest.csv`).
+  Chosen over a recent-period hold-out because sPlotOpen ends in 2015 and a 2011-2015 test would
+  be confounded with GBIF growth after 2012 and with the prior-presence look-back length.
+  **Caveat:** pilots v1-v3 already used these plots (exploratory); the hold-out is untouched only
+  with respect to the OD model, its pilot and its tuning.
+  `features.load_modelling_table` drops the hold-out unless `include_holdout=True` (to be passed
+  ONCE, by the final confirmatory evaluation).
+- **Development splits (splits_v2):** 36,852 plots, 178 blocks, spatial 5-fold CV with blocked
+  inner validation. **Effort-transfer split:** development blocks with block-median log effort
+  above the development median (= 0) train (87 blocks, 1,758 positives at N5); the others are the
+  transfer test (91 blocks, median effort 0, 118 positives at N5, 281 at N10).

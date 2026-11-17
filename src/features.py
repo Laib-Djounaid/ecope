@@ -14,16 +14,25 @@ BIOMES = ["Alpine", "Boreal zone", "Dry midlatitudes", "Dry tropics and subtropi
           "Tropics with summer rain", "Tropics with year-round rain"]
 
 
-def load_modelling_table(cfg: dict) -> pd.DataFrame:
-    """Eligible plots merged with their split assignments (row order = splits.parquet)."""
+def load_modelling_table(cfg: dict, include_holdout: bool = False) -> pd.DataFrame:
+    """Eligible plots merged with their split assignments.
+
+    Splits come from cfg['holdout']['splits_file'] (splits_v2 since decision D10). The sealed
+    confirmatory hold-out is DROPPED unless include_holdout=True, which only the final
+    confirmatory evaluation may pass. Pilots v1-v3 used the older splits.parquet (git tags
+    pilot-v1 .. pilot-v3)."""
     proc = p(cfg, "processed_dir")
     d = pd.read_parquet(proc / "plots.parquet")
-    s = pd.read_parquet(proc / "splits.parquet")
+    s = pd.read_parquet(proc / cfg.get("holdout", {}).get("splits_file", "splits.parquet"))
+    if "holdout" in s.columns and not include_holdout:
+        s = s[~s["holdout"]].reset_index(drop=True)
     e = s.merge(d, on="PlotObservationID", how="left", validate="one_to_one")
     eff = proc / "effort_layer.parquet"
-    if eff.exists():   # independent effort layer from src/01c_effort_layer.py
+    if eff.exists():   # independent effort layer (src/01d_effort_from_sql.py)
         e = e.merge(pd.read_parquet(eff), on="PlotObservationID", how="left", validate="one_to_one")
     assert e["eligible_N5"].all()
+    if "holdout" in e.columns and not include_holdout:
+        assert not e["holdout"].any(), "hold-out rows must never reach development code"
     return e
 
 

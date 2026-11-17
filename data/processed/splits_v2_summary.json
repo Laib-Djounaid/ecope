@@ -1,0 +1,116 @@
+{
+ "holdout": {
+  "plots": 7920,
+  "blocks": 92,
+  "pos_N5": 355,
+  "pos_N7": 483,
+  "pos_N10": 562,
+  "prev_N5": 0.0448,
+  "prev_N7": 0.061,
+  "prev_N10": 0.071,
+  "median_log_effort": 1.099,
+  "fraction_plots": 0.1769,
+  "sha256_sorted_plot_ids": "31e674c06b13b0ac4b5afb0fc3f0c66af44c9e7e3ab05d464cbe4c4ff3cd3a7f",
+  "by_continent": {
+   "North America": 2843,
+   "Asia": 1331,
+   "Europe": 1317,
+   "Oceania": 1279,
+   "Africa": 717,
+   "South America": 433
+  }
+ },
+ "development": {
+  "plots": 36852,
+  "blocks": 178,
+  "pos_N5": 1876,
+  "pos_N7": 2524,
+  "pos_N10": 3242,
+  "prev_N5": 0.0509,
+  "prev_N7": 0.0685,
+  "prev_N10": 0.088,
+  "median_log_effort": 0.693
+ },
+ "dev_folds": {
+  "0": {
+   "plots": 7408,
+   "blocks": 37,
+   "pos_N5": 526,
+   "pos_N7": 620,
+   "pos_N10": 699,
+   "prev_N5": 0.071,
+   "prev_N7": 0.0837,
+   "prev_N10": 0.0944,
+   "median_log_effort": 0.0
+  },
+  "1": {
+   "plots": 7266,
+   "blocks": 40,
+   "pos_N5": 388,
+   "pos_N7": 464,
+   "pos_N10": 555,
+   "prev_N5": 0.0534,
+   "prev_N7": 0.0639,
+   "prev_N10": 0.0764,
+   "median_log_effort": 0.693
+  },
+  "2": {
+   "plots": 7268,
+   "blocks": 36,
+   "pos_N5": 221,
+   "pos_N7": 379,
+   "pos_N10": 557,
+   "prev_N5": 0.0304,
+   "prev_N7": 0.0521,
+   "prev_N10": 0.0766,
+   "median_log_effort": 1.099
+  },
+  "3": {
+   "plots": 7457,
+   "blocks": 26,
+   "pos_N5": 321,
+   "pos_N7": 563,
+   "pos_N10": 688,
+   "prev_N5": 0.043,
+   "prev_N7": 0.0755,
+   "prev_N10": 0.0923,
+   "median_log_effort": 0.0
+  },
+  "4": {
+   "plots": 7453,
+   "blocks": 39,
+   "pos_N5": 420,
+   "pos_N7": 498,
+   "pos_N10": 743,
+   "prev_N5": 0.0564,
+   "prev_N7": 0.0668,
+   "prev_N10": 0.0997,
+   "median_log_effort": 0.0
+  }
+ },
+ "transfer": {
+  "threshold_block_median_log_effort": 0.0,
+  "train_high": {
+   "plots": 18542,
+   "blocks": 87,
+   "pos_N5": 1758,
+   "pos_N7": 2281,
+   "pos_N10": 2961,
+   "prev_N5": 0.0948,
+   "prev_N7": 0.123,
+   "prev_N10": 0.1597,
+   "median_log_effort": 3.045
+  },
+  "test_low": {
+   "plots": 18310,
+   "blocks": 91,
+   "pos_N5": 118,
+   "pos_N7": 243,
+   "pos_N10": 281,
+   "prev_N5": 0.0064,
+   "prev_N7": 0.0133,
+   "prev_N10": 0.0153,
+   "median_log_effort": 0.0
+  }
+ }
+}
