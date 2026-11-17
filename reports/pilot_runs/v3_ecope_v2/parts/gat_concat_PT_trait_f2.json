@@ -1,0 +1,1 @@
+{"config": "gat_concat_PT_trait", "fold": 2, "n_test": 8997, "n_pos": 413, "chance": 0.04590419028565077, "pr_auc": 0.13729333838937283, "roc_auc": 0.7676168173684247, "seconds": 275.9055652618408, "best_val_pr_auc": 0.23325429669444103, "epochs": 50, "best_epoch": 30}

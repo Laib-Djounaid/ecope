@@ -1,0 +1,19 @@
+config,reference,test,pooled_diff,ci95_low,ci95_high,verdict
+ecope_v2_P_trait,G_lgbm,competitive_vs_G,-0.20383422343192636,-0.3044809982644046,-0.06600970346646957,inferior
+ecope_v2_P_trait,gat_concat_P_trait,ecope_adds_vs_concat,0.005670822623231264,-0.04766587277173993,0.05177755005049634,concat better or equal
+gat_concat_P_trait,G_lgbm,competitive_vs_G,-0.20950504605515763,-0.32674830097379215,-0.066480131366824,inferior
+ecope_v2_P_geo,G_lgbm,competitive_vs_G,-0.120154784624116,-0.2430928634702968,0.05879789014852848,inferior
+ecope_v2_P_geo,gat_concat_P_geo,ecope_adds_vs_concat,-0.14441020637418306,-0.2532604509081025,-0.018087971661049588,concat better or equal
+gat_concat_P_geo,G_lgbm,competitive_vs_G,0.024255421750067063,-0.06544663573513333,0.12223187284757848,inferior
+ecope_v2_P_combined,G_lgbm,competitive_vs_G,-0.13206165398598402,-0.2903915298368182,0.06840406241723199,inferior
+ecope_v2_P_combined,gat_concat_P_combined,ecope_adds_vs_concat,0.0034559601392561423,-0.060158616648840674,0.05680486098956937,concat better or equal
+gat_concat_P_combined,G_lgbm,competitive_vs_G,-0.13551761412524016,-0.2721545498296653,0.05770493650566583,inferior
+ecope_v2_PT_trait,G_lgbm,competitive_vs_G,-0.20459214349859184,-0.2960255755561536,-0.08305870112748312,inferior
+ecope_v2_PT_trait,gat_concat_PT_trait,ecope_adds_vs_concat,-0.0077912165354392104,-0.034655935456119634,0.02192456211850454,concat better or equal
+gat_concat_PT_trait,G_lgbm,competitive_vs_G,-0.19680092696315263,-0.30155037169684784,-0.06447449531528662,inferior
+ecope_v2_PT_geo,G_lgbm,competitive_vs_G,-0.10618000218096896,-0.23763648514132363,0.05688212610014059,inferior
+ecope_v2_PT_geo,gat_concat_PT_geo,ecope_adds_vs_concat,-0.0532015816710153,-0.1834290430336727,0.059375211189592936,concat better or equal
+gat_concat_PT_geo,G_lgbm,competitive_vs_G,-0.05297842050995366,-0.14472711482599473,0.06929756705749697,inferior
+ecope_v2_PT_combined,G_lgbm,competitive_vs_G,-0.16177409465436832,-0.30360466007364717,0.017024074972944857,inferior
+ecope_v2_PT_combined,gat_concat_PT_combined,ecope_adds_vs_concat,-0.07822188336897895,-0.22251384278489997,0.016664460426968324,concat better or equal
+gat_concat_PT_combined,G_lgbm,competitive_vs_G,-0.08355221128538937,-0.1767296685535158,0.030196799885457853,inferior

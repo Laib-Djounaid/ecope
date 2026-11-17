@@ -1,0 +1,1 @@
+{"config": "ecope_v2_PT_geo", "fold": 3, "n_test": 8933, "n_pos": 387, "chance": 0.04332251203403112, "pr_auc": 0.4548261475336397, "roc_auc": 0.9527140249061018, "seconds": 264.20010447502136, "best_val_pr_auc": 0.4243026249366387, "epochs": 58, "best_epoch": 38}

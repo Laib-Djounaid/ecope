@@ -143,3 +143,24 @@ changes, and how to go back. Newest entries at the bottom. Git tags mark decisio
 - **Transparency note:** a smoke test (fold 0 only, 4 epochs, 4 configurations) was run to check the
   code before this entry; its outputs were deleted and are not results. It confirmed that G_lgbm
   reproduces pilot v2 exactly on fold 0 (PR-AUC 0.287).
+
+## Pilot v3 - pre-registered EcoPE-GAT v2 test: RESULT (2026-11-17)
+- Files: `reports/pilot_runs/v3_ecope_v2/` (per-fold metrics, summary, `preregistered_tests.csv`,
+  out-of-fold predictions, per-part checkpoints, log). Run 22:32 -> 13:20 (laptop slept 01:27-11:50;
+  resumed from checkpoints, no part recomputed).
+- Positives per test fold: 429, 576, 413, 387, 426.
+- **Primary (`ecope_v2_PT_combined`) vs G_lgbm: pooled PR-AUC 0.279 vs 0.440, diff -0.162,
+  95% CI [-0.304, +0.017]. Lower bound < -0.02 -> NOT competitive (non-inferiority not shown).**
+- **EcoPE adds? primary vs GAT+concat (same nodes, graph): diff -0.078, CI [-0.223, +0.017] -> no.**
+- **Pre-registered consequence: evaluation paper, with EcoPE-GAT v1/v2 as case studies.**
+- Secondary variants (no verdict, as pre-registered): trait graphs are worst (pooled 0.23-0.24 for
+  all four); geo graphs best; `gat_concat_P_geo` (no EcoPE, prior-only nodes, geo graph) has the
+  highest pooled PR-AUC 0.465 (vs G 0.440; diff +0.024, CI [-0.065, +0.122]). EcoPE never beats
+  concatenation; for P + geo concatenation is better with CI excluding 0 (diff -0.144,
+  CI [-0.253, -0.018]).
+- **Observation for the full run (not a change of this verdict):** fold-mean PR-AUC differs
+  markedly from pooled PR-AUC for the GNNs (e.g. `ecope_v2_P_geo` fold-mean 0.456 vs pooled 0.320;
+  G_lgbm 0.421 vs 0.440). Pooling out-of-fold scores penalises models whose score scale varies
+  between folds (GNNs trained with class weights and variable early stopping). Fold-mean of the
+  primary: 0.380 vs G 0.421 (per-fold diffs +0.078, -0.146, -0.005, -0.222, +0.095).
+  Any alternative statistic for the full run must be specified BEFORE that run.

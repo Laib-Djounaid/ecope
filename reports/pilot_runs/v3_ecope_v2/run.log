@@ -1,0 +1,103 @@
+fold 0: edges trait 674,825, geo 560,128, combined 1,186,056 (4s)
+  fold 0 G_lgbm: PR-AUC 0.287 (0s)
+  fold 0 ecope_v2_P_trait: PR-AUC 0.264 (129s)
+  fold 0 gat_concat_P_trait: PR-AUC 0.294 (281s)
+  fold 0 ecope_v2_P_geo: PR-AUC 0.364 (52s)
+  fold 0 gat_concat_P_geo: PR-AUC 0.463 (219s)
+  fold 0 ecope_v2_P_combined: PR-AUC 0.364 (201s)
+  fold 0 gat_concat_P_combined: PR-AUC 0.404 (212s)
+  fold 0 ecope_v2_PT_trait: PR-AUC 0.255 (243s)
+  fold 0 gat_concat_PT_trait: PR-AUC 0.276 (184s)
+  fold 0 ecope_v2_PT_geo: PR-AUC 0.413 (99s)
+  fold 0 gat_concat_PT_geo: PR-AUC 0.433 (112s)
+  fold 0 ecope_v2_PT_combined: PR-AUC 0.365 (238s)
+  fold 0 gat_concat_PT_combined: PR-AUC 0.408 (227s)
+fold 1: edges trait 674,605, geo 560,128, combined 1,185,819 (7s)
+  fold 1 G_lgbm: PR-AUC 0.647 (0s)
+  fold 1 ecope_v2_P_trait: PR-AUC 0.477 (157s)
+  fold 1 gat_concat_P_trait: PR-AUC 0.421 (93s)
+  fold 1 ecope_v2_P_geo: PR-AUC 0.641 (49s)
+  fold 1 gat_concat_P_geo: PR-AUC 0.502 (178s)
+  fold 1 ecope_v2_P_combined: PR-AUC 0.496 (107s)
+  fold 1 gat_concat_P_combined: PR-AUC 0.493 (154s)
+  fold 1 ecope_v2_PT_trait: PR-AUC 0.502 (193s)
+  fold 1 gat_concat_PT_trait: PR-AUC 0.504 (135s)
+  fold 1 ecope_v2_PT_geo: PR-AUC 0.434 (51s)
+  fold 1 gat_concat_PT_geo: PR-AUC 0.611 (153s)
+  fold 1 ecope_v2_PT_combined: PR-AUC 0.501 (118s)
+  fold 1 gat_concat_PT_combined: PR-AUC 0.632 (258s)
+fold 2: edges trait 674,507, geo 560,128, combined 1,185,725 (7s)
+  fold 2 G_lgbm: PR-AUC 0.410 (0s)
+  fold 2 ecope_v2_P_trait: PR-AUC 0.143 (113s)
+  fold 2 gat_concat_P_trait: PR-AUC 0.138 (124s)
+  fold 2 ecope_v2_P_geo: PR-AUC 0.465 (133s)
+  fold 2 gat_concat_P_geo: PR-AUC 0.549 (403s)
+  fold 2 ecope_v2_P_combined: PR-AUC 0.352 (326s)
+  fold 2 gat_concat_P_combined: PR-AUC 0.364 (225s)
+  fold 2 ecope_v2_PT_trait: PR-AUC 0.139 (153s)
+  fold 2 gat_concat_PT_trait: PR-AUC 0.137 (276s)
+  fold 2 ecope_v2_PT_geo: PR-AUC 0.516 (143s)
+  fold 2 gat_concat_PT_geo: PR-AUC 0.450 (202s)
+  fold 2 ecope_v2_PT_combined: PR-AUC 0.405 (246s)
+  fold 2 gat_concat_PT_combined: PR-AUC 0.371 (176s)
+fold 3: edges trait 674,589, geo 560,128, combined 1,185,842 (4s)
+  fold 3 G_lgbm: PR-AUC 0.568 (0s)
+  fold 3 ecope_v2_P_trait: PR-AUC 0.249 (108s)
+  fold 3 gat_concat_P_trait: PR-AUC 0.273 (288s)
+  fold 3 ecope_v2_P_geo: PR-AUC 0.451 (67s)
+  fold 3 gat_concat_P_geo: PR-AUC 0.503 (180s)
+  fold 3 ecope_v2_P_combined: PR-AUC 0.378 (1525s)
+  fold 3 gat_concat_P_combined: PR-AUC 0.400 (468s)
+  fold 3 ecope_v2_PT_trait: PR-AUC 0.244 (336s)
+  fold 3 gat_concat_PT_trait: PR-AUC 0.270 (302s)
+  fold 3 ecope_v2_PT_geo: PR-AUC 0.455 (264s)
+  fold 3 gat_concat_PT_geo: PR-AUC 0.460 (156s)
+  fold 3 ecope_v2_PT_combined: PR-AUC 0.346 (405s)
+  fold 3 gat_concat_PT_combined: PR-AUC 0.414 (37658s)
+fold 4: edges trait 674,631, geo 560,128, combined 1,185,894 (18s)
+  fold 4 G_lgbm: PR-AUC 0.191 (3s)
+  fold 4 ecope_v2_P_trait: PR-AUC 0.218 (255s)
+  fold 4 gat_concat_P_trait: PR-AUC 0.190 (830s)
+  fold 4 ecope_v2_P_geo: PR-AUC 0.360 (171s)
+  fold 4 gat_concat_P_geo: PR-AUC 0.242 (125s)
+  fold 4 ecope_v2_P_combined: PR-AUC 0.378 (596s)
+  fold 4 gat_concat_P_combined: PR-AUC 0.262 (941s)
+  fold 4 ecope_v2_PT_trait: PR-AUC 0.183 (401s)
+  fold 4 gat_concat_PT_trait: PR-AUC 0.202 (313s)
+  fold 4 ecope_v2_PT_geo: PR-AUC 0.269 (161s)
+  fold 4 gat_concat_PT_geo: PR-AUC 0.245 (145s)
+  fold 4 ecope_v2_PT_combined: PR-AUC 0.286 (473s)
+  fold 4 gat_concat_PT_combined: PR-AUC 0.250 (362s)
+                config  pr_auc_mean  pr_auc_sd  roc_auc_mean  roc_auc_sd  epochs  pooled_pr_auc
+                G_lgbm        0.421      0.190         0.898       0.043     NaN          0.440
+  ecope_v2_PT_combined        0.380      0.080         0.880       0.056    56.4          0.279
+       ecope_v2_PT_geo        0.417      0.092         0.889       0.051    52.0          0.334
+     ecope_v2_PT_trait        0.264      0.141         0.854       0.063    85.4          0.236
+   ecope_v2_P_combined        0.394      0.058         0.896       0.058    59.8          0.308
+        ecope_v2_P_geo        0.456      0.114         0.881       0.071    41.8          0.320
+      ecope_v2_P_trait        0.270      0.125         0.876       0.051    58.8          0.237
+gat_concat_PT_combined        0.415      0.138         0.896       0.048    59.0          0.357
+     gat_concat_PT_geo        0.440      0.130         0.886       0.073    64.4          0.387
+   gat_concat_PT_trait        0.278      0.139         0.859       0.057    67.8          0.244
+ gat_concat_P_combined        0.385      0.083         0.892       0.071    79.6          0.305
+      gat_concat_P_geo        0.452      0.121         0.887       0.082   101.6          0.465
+    gat_concat_P_trait        0.263      0.108         0.865       0.071   101.6          0.231
+                config              reference                 test  pooled_diff  ci95_low  ci95_high                verdict
+      ecope_v2_P_trait                 G_lgbm     competitive_vs_G       -0.204    -0.304     -0.066               inferior
+      ecope_v2_P_trait     gat_concat_P_trait ecope_adds_vs_concat        0.006    -0.048      0.052 concat better or equal
+    gat_concat_P_trait                 G_lgbm     competitive_vs_G       -0.210    -0.327     -0.066               inferior
+        ecope_v2_P_geo                 G_lgbm     competitive_vs_G       -0.120    -0.243      0.059               inferior
+        ecope_v2_P_geo       gat_concat_P_geo ecope_adds_vs_concat       -0.144    -0.253     -0.018 concat better or equal
+      gat_concat_P_geo                 G_lgbm     competitive_vs_G        0.024    -0.065      0.122               inferior
+   ecope_v2_P_combined                 G_lgbm     competitive_vs_G       -0.132    -0.290      0.068               inferior
+   ecope_v2_P_combined  gat_concat_P_combined ecope_adds_vs_concat        0.003    -0.060      0.057 concat better or equal
+ gat_concat_P_combined                 G_lgbm     competitive_vs_G       -0.136    -0.272      0.058               inferior
+     ecope_v2_PT_trait                 G_lgbm     competitive_vs_G       -0.205    -0.296     -0.083               inferior
+     ecope_v2_PT_trait    gat_concat_PT_trait ecope_adds_vs_concat       -0.008    -0.035      0.022 concat better or equal
+   gat_concat_PT_trait                 G_lgbm     competitive_vs_G       -0.197    -0.302     -0.064               inferior
+       ecope_v2_PT_geo                 G_lgbm     competitive_vs_G       -0.106    -0.238      0.057               inferior
+       ecope_v2_PT_geo      gat_concat_PT_geo ecope_adds_vs_concat       -0.053    -0.183      0.059 concat better or equal
+     gat_concat_PT_geo                 G_lgbm     competitive_vs_G       -0.053    -0.145      0.069               inferior
+  ecope_v2_PT_combined                 G_lgbm     competitive_vs_G       -0.162    -0.304      0.017               inferior
+  ecope_v2_PT_combined gat_concat_PT_combined ecope_adds_vs_concat       -0.078    -0.223      0.017 concat better or equal
+gat_concat_PT_combined                 G_lgbm     competitive_vs_G       -0.084    -0.177      0.030               inferior

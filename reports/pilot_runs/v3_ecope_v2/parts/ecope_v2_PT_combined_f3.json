@@ -1,0 +1,1 @@
+{"config": "ecope_v2_PT_combined", "fold": 3, "n_test": 8933, "n_pos": 387, "chance": 0.04332251203403112, "pr_auc": 0.3457109081633794, "roc_auc": 0.9117667512673473, "seconds": 405.3002710342407, "best_val_pr_auc": 0.313951948435908, "epochs": 45, "best_epoch": 25}
