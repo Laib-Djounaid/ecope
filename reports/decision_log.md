@@ -375,3 +375,9 @@ causal model. Draft addendum `reports/preregistration_D14_draft.md` (H6-H9, mode
 final-model selection rule). D13 H1-H5 unchanged. Not frozen; awaiting user approval. Hold-out
 never loaded. Development D13 numbers seen so far (cv0-cv3, N = 5) motivated C, which is why C
 is a new pre-registered hypothesis tested only on the sealed hold-out.
+
+## D14 frozen (2026-11-18)
+User approved the D14 draft ("vas-y, garde trace de tout"). Implemented `src/asof_features.py`,
+`graph_models.AsOfGAT`, `src/11_d14.py`, config `d14`. Smoke test passed (self-checks, 0 leaking
+edges in 20,000 sampled; smoke outputs deleted). Draft renamed to `reports/preregistration_D14.md`,
+frozen at tag `prereg-D14`. D14 tuning queued after the D13 GNN run (log `logs/d14_asof.log`).

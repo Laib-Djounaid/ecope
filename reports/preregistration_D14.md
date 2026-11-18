@@ -1,4 +1,6 @@
-# Pre-registration addendum D14 (DRAFT, not frozen; written before any hold-out access)
+# Pre-registration addendum D14 (FROZEN at git tag `prereg-D14`, before any D14 tuning and any hold-out access)
+
+Draft commit 8fbdc51, approved by the user on 2026-11-18 ("vas-y").
 
 Decision D14 (user, 2026-11-18): the paper becomes an **applied** paper on predicting
 plant-pathogen emergence (option B) **and** proposes a new causal graph model (option C).
@@ -67,3 +69,15 @@ eligible. The choice is written to `results/d14/final_model.json` and committed 
 `src/10_holdout_d13.py` is extended (same single run, after tag `frozen-D14`, which replaces
 `frozen-D13`): H1-H5 as frozen in D13, plus H6-H9, plus the H7 subset counts reported before
 prediction. No change after this run.
+
+## 5. Implementation (frozen with this addendum)
+
+- Edge features: `src/asof_features.py` (`asof_edges`). Self-check asserted: for j = i the as-of
+  features reproduce the stored node features exactly (prior count, species count, effort).
+- Model: `graph_models.AsOfGAT`. Tuning/refits: `src/11_d14.py` (same contexts, inner validations,
+  seeds and budget as `src/09_d13.py`; space in `config.yaml` section `d14.asof_space`).
+- Smoke run on development data (2 trials, 2 epochs; outputs deleted, no result used): 459,584
+  directed edges, 0 removed, minimum in-degree 10; brute-force check on 20,000 random edges:
+  0 edges carry a record from the receiver's label window (N = 5). The full check for N = 5/7/10
+  is written to `results/d14/asof_leak_check.json` by the real run.
+- D14 tuning starts automatically after the D13 GNN run finishes (same machine, CPU).

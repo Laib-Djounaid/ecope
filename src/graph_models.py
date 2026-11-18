@@ -211,3 +211,46 @@ def time_causal(ei: torch.Tensor, ew: torch.Tensor, years: np.ndarray) -> tuple[
     yr = torch.as_tensor(np.asarray(years), dtype=torch.long)
     keep = yr[ei[0]] <= yr[ei[1]]
     return ei[:, keep], ew[keep]
+
+
+# --------------------------------------------------------------------------- D14: as-of model
+class AsOfGAT(nn.Module):
+    """EcoPE-GAT_asof (decision D14, option C). One attention layer over edge-level messages whose
+    time-stamped part is computed AS OF THE RECEIVER's date (src/asof_features.py), so every
+    time-stamped quantity reaching node i uses records with year < t_i, with no edge removed.
+
+    h_i     = inp([x_i, enc(ctx_i)])
+    m_{j->i} = msg([xe_{j->i}, enc(ctx_j), ea_{j->i}])
+    a_{ji}  = softmax_j( w^T LeakyReLU(W [h_i, m_{j->i}]) )     (over the in-edges of i)
+    logit_i = readout([h_i, sum_j a_{ji} m_{j->i}])
+    data: x [n, d_in], ctx [n, d_ctx], edge_index [2, E], xe [E, d_in], ea [E, d_ea].
+    """
+
+    def __init__(self, d_in: int, d_ctx: int, d_ea: int, hidden: int, dropout: float,
+                 ecope_form: str = "mlp", ecope_dim: int = 32):
+        super().__init__()
+        if ecope_form == "mlp":
+            self.ecope, d_enc = EcoPE(d_ctx, 64, ecope_dim), ecope_dim
+        elif ecope_form == "linear":
+            self.ecope, d_enc = nn.Linear(d_ctx, ecope_dim), ecope_dim
+        elif ecope_form == "identity":
+            self.ecope, d_enc = nn.Identity(), d_ctx
+        else:
+            raise ValueError(ecope_form)
+        self.inp = nn.Sequential(nn.Linear(d_in + d_enc, hidden), nn.LayerNorm(hidden), nn.GELU())
+        self.msg = nn.Sequential(nn.Linear(d_in + d_enc + d_ea, hidden), nn.LayerNorm(hidden), nn.GELU())
+        self.att = nn.Sequential(nn.Linear(2 * hidden, hidden), nn.LeakyReLU(0.2), nn.Linear(hidden, 1))
+        self.drop = nn.Dropout(dropout)
+        self.readout = nn.Sequential(nn.Linear(2 * hidden, 64), nn.ReLU(), nn.Dropout(dropout),
+                                     nn.Linear(64, 1))
+
+    def forward(self, data, return_attention: bool = False):
+        from torch_geometric.utils import scatter, softmax
+        src, dst = data["edge_index"]
+        c = self.ecope(data["ctx"])
+        h = self.drop(self.inp(torch.cat([data["x"], c], 1)))
+        m = self.drop(self.msg(torch.cat([data["xe"], c[src], data["ea"]], 1)))
+        a = softmax(self.att(torch.cat([h[dst], m], 1)).squeeze(-1), dst, num_nodes=h.shape[0])
+        agg = scatter(a.unsqueeze(-1) * m, dst, dim=0, dim_size=h.shape[0], reduce="sum")
+        out = self.readout(torch.cat([h, agg], 1)).squeeze(-1)
+        return (out, a) if return_attention else out

@@ -142,3 +142,12 @@ d13:
     dropout: [float, 0.1, 0.5]
     lr: [float, 1.0e-4, 1.0e-2, true]
     weight_decay: [float, 1.0e-6, 1.0e-3, true]
+d14:
+  # Pre-registration addendum D14 (reports/preregistration_D14.md, tag prereg-D14).
+  # Protocol (horizons, seeds, trials, epochs, bootstrap) = d13 section; only the space differs.
+  asof_space:
+    encoder: [cat, [identity, linear, mlp]]
+    hidden: [cat, [64, 128]]
+    dropout: [float, 0.1, 0.5]
+    lr: [float, 1.0e-4, 1.0e-2, true]
+    weight_decay: [float, 1.0e-6, 1.0e-3, true]
