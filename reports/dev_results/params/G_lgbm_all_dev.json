@@ -1,0 +1,15 @@
+{
+ "model": "G_lgbm",
+ "context": "all_dev",
+ "best_params": {
+  "learning_rate": 0.0116918016290329,
+  "num_leaves": 29,
+  "min_child_samples": 59,
+  "subsample": 0.8902987221500708,
+  "colsample_bytree": 0.33267207398450976,
+  "reg_lambda": 0.10183137454576771,
+  "balanced": false
+ },
+ "best_value": 0.7488229100980547,
+ "n_trials": 30
+}

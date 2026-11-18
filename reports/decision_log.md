@@ -395,3 +395,13 @@ D13 GNN tuning finished 2026-11-18 23:44 (42 parameter files). D14 tuning starte
 `reports/dev_results/`), `src/13_h4.py`. H4b (development, pre-registered): Spearman 0.374,
 95% CI [0.204, 0.504], 1,876 positives, 37 blocks -> supported. H4a and H4c queued after D14
 (log `logs/h4.log`); H4a q=0 reuses the D13 EcoPE-GAT_leaky refits (same graph, params, seeds).
+
+## Dev summary, first run (2026-11-19 00:15, Claude, user absent)
+`reports/dev_results/` (seed-mean score). N = 5 fold-mean: G_lgbm_nbr_leaky 0.503, EcoPE-GAT_leaky 0.478,
+G_lgbm_nbr 0.456, G_lgbm 0.410, EcoPE-GAT_causal 0.364, GAT_noctx_causal 0.360. Dev transfer:
+EcoPE-GAT_leaky 0.257, G_lgbm_nbr_leaky 0.129, G_lgbm 0.075, G_lgbm_nbr 0.057, GAT_noctx 0.050,
+EcoPE-GAT_causal 0.050 (prevalence 0.006). Block-bootstrap CIs are wide and skewed (positives in
+only 37 of 178 blocks). Implementation detail fixed now, BEFORE the hold-out: a bootstrap replicate
+whose resampled test set has no positive is dropped and the number of valid replicates is reported
+(the pre-registration did not specify this case; it produced NaN in one development CI). The same
+rule will be used in `src/10_holdout_d13.py`.

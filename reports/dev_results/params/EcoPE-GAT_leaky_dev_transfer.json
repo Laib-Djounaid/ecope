@@ -1,0 +1,14 @@
+{
+ "model": "EcoPE-GAT_leaky",
+ "context": "dev_transfer",
+ "best_params": {
+  "encoder": "linear",
+  "hidden": 64,
+  "heads": 4,
+  "dropout": 0.10804301847499742,
+  "lr": 0.00454862420872194,
+  "weight_decay": 1.0329669551879733e-06
+ },
+ "best_value": 0.6300320648489087,
+ "n_trials": 30
+}

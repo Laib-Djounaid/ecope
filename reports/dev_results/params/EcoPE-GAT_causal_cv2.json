@@ -1,0 +1,14 @@
+{
+ "model": "EcoPE-GAT_causal",
+ "context": "cv2",
+ "best_params": {
+  "encoder": "mlp",
+  "hidden": 64,
+  "heads": 2,
+  "dropout": 0.1826565375284786,
+  "lr": 0.008975620686724107,
+  "weight_decay": 2.956200008136403e-05
+ },
+ "best_value": 0.5167577717939075,
+ "n_trials": 30
+}

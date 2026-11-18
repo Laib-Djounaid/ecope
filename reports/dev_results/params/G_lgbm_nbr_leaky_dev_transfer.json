@@ -1,0 +1,15 @@
+{
+ "model": "G_lgbm_nbr_leaky",
+ "context": "dev_transfer",
+ "best_params": {
+  "learning_rate": 0.05492958217992728,
+  "num_leaves": 32,
+  "min_child_samples": 53,
+  "subsample": 0.6846860309758652,
+  "colsample_bytree": 0.5252714618809351,
+  "reg_lambda": 0.019394287526350282,
+  "balanced": true
+ },
+ "best_value": 0.7005976261398191,
+ "n_trials": 30
+}

@@ -1,0 +1,13 @@
+{
+ "model": "GAT_noctx_causal",
+ "context": "dev_transfer",
+ "best_params": {
+  "hidden": 128,
+  "heads": 2,
+  "dropout": 0.3824160688870494,
+  "lr": 0.008566794850243151,
+  "weight_decay": 7.027627611757202e-06
+ },
+ "best_value": 0.6656397876453004,
+ "n_trials": 30
+}

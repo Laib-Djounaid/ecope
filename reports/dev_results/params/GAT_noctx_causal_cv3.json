@@ -1,0 +1,13 @@
+{
+ "model": "GAT_noctx_causal",
+ "context": "cv3",
+ "best_params": {
+  "hidden": 128,
+  "heads": 2,
+  "dropout": 0.22181383427201812,
+  "lr": 0.007938374743992204,
+  "weight_decay": 2.3955608250801556e-06
+ },
+ "best_value": 0.4312809477861073,
+ "n_trials": 30
+}

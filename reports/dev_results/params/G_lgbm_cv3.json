@@ -1,0 +1,15 @@
+{
+ "model": "G_lgbm",
+ "context": "cv3",
+ "best_params": {
+  "learning_rate": 0.046031780001476175,
+  "num_leaves": 69,
+  "min_child_samples": 83,
+  "subsample": 0.5829144596611127,
+  "colsample_bytree": 0.9984703542768087,
+  "reg_lambda": 0.0027338460308570585,
+  "balanced": true
+ },
+ "best_value": 0.4872003217373512,
+ "n_trials": 30
+}

@@ -79,9 +79,10 @@ def main() -> None:
                         if y.sum() == 0:
                             continue
                         v.append(AP(y, S[(a_, c, N)][ix]) - AP(y, S[(b_, c, N)][ix]))
-                    boot.append(np.mean(v))
-                lo, hi = np.percentile(boot, [2.5, 97.5])
-                diffs.append({"N": N, "setting": setting, "a": a_, "b": b_, "diff": obs, "ci_lo": lo, "ci_hi": hi})
+                    boot.append(np.mean(v) if v else np.nan)   # replicate without positives: dropped
+                lo, hi = np.nanpercentile(boot, [2.5, 97.5])
+                diffs.append({"N": N, "setting": setting, "a": a_, "b": b_, "diff": obs, "ci_lo": lo, "ci_hi": hi,
+                              "n_valid_replicates": int(np.isfinite(boot).sum())})
     pd.DataFrame(diffs).to_csv(out / "differences.csv", index=False, float_format="%.4f")
     for d in ["d13", "d14"]:
         for f in (res / d / "params").glob("*.json"):
