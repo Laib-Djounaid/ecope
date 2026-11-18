@@ -387,3 +387,11 @@ User: if results are not publishable after D13/D14, try new variants without wai
 by Claude to keep the hold-out valid: publishability is judged on DEVELOPMENT results; any new
 variant is explored on development data only, pre-registered (D15, ...) and tagged before the single
 hold-out run; every autonomous decision is logged here as "made by Claude, user absent".
+
+## D13 tuning done; H4b; dev summary scripts (2026-11-18/19, Claude, user absent)
+D13 GNN tuning finished 2026-11-18 23:44 (42 parameter files). D14 tuning started right after
+(as-of leak check N=5/7/10: 0 of 20,000 sampled edges). Added `src/leakage_diagnostic.py` (D1, D2),
+`src/12_dev_summary.py` (development seed-mean PR-AUC + block-bootstrap differences, outputs in
+`reports/dev_results/`), `src/13_h4.py`. H4b (development, pre-registered): Spearman 0.374,
+95% CI [0.204, 0.504], 1,876 positives, 37 blocks -> supported. H4a and H4c queued after D14
+(log `logs/h4.log`); H4a q=0 reuses the D13 EcoPE-GAT_leaky refits (same graph, params, seeds).
