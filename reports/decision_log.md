@@ -368,3 +368,10 @@ analysis (illustration only, leaky vs strict t_j + N <= t_i). Added: H1b (rank r
 (scope: leaky vs causal neighbourhood features in LightGBM; framing widened if supported), and the
 cost of the causal rule (15.2% edges removed, 232 isolated nodes = 0.6%, sensitivity excluding
 isolated nodes). Frozen text: `reports/preregistration_D13.md`, tag `prereg-D13`.
+
+## D14 (2026-11-18, draft): applied framing (B) + new causal model (C)
+User asked for both options: applied paper on plant-pathogen emergence forecasting, plus a new
+causal model. Draft addendum `reports/preregistration_D14_draft.md` (H6-H9, model EcoPE-GAT_asof,
+final-model selection rule). D13 H1-H5 unchanged. Not frozen; awaiting user approval. Hold-out
+never loaded. Development D13 numbers seen so far (cv0-cv3, N = 5) motivated C, which is why C
+is a new pre-registered hypothesis tested only on the sealed hold-out.
