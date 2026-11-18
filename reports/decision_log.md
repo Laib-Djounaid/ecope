@@ -381,3 +381,9 @@ User approved the D14 draft ("vas-y, garde trace de tout"). Implemented `src/aso
 `graph_models.AsOfGAT`, `src/11_d14.py`, config `d14`. Smoke test passed (self-checks, 0 leaking
 edges in 20,000 sampled; smoke outputs deleted). Draft renamed to `reports/preregistration_D14.md`,
 frozen at tag `prereg-D14`. D14 tuning queued after the D13 GNN run (log `logs/d14_asof.log`).
+
+## Autonomy while the user is away (2026-11-18)
+User: if results are not publishable after D13/D14, try new variants without waiting. Rule adopted
+by Claude to keep the hold-out valid: publishability is judged on DEVELOPMENT results; any new
+variant is explored on development data only, pre-registered (D15, ...) and tagged before the single
+hold-out run; every autonomous decision is logged here as "made by Claude, user absent".
