@@ -454,3 +454,13 @@ to the upper bound in several comparisons); kept as pre-registered, to be discus
   591038eb…62975f3). Dev prevalence y3 = 0.376 (high: H. halys spread across W. Europe 2016-2025; PR-AUC
   baselines will be high, so differences and the emergence subset R7 carry the information).
   Note vs draft: effort counts start in 2005 (first downloaded year), not 2000; draft corrected before freeze.
+
+## 2026-11-19 — D15 frozen (tag prereg-D15)
+
+- `src/p02_pests_models.py` written, smoke-tested (outputs deleted). Pre-registration renamed from draft
+  and frozen with an implementation section. P2/P3 hold-out SHAs not yet available (download running);
+  the frozen build code defines them; they will be logged before any fit on P2/P3. Decision by Claude
+  (user away after "reprends tout"), within the autonomy rule.
+- Tagging slip: tag `prereg-D15` (commit d292207) captured only the file rename, because a failed
+  `git add` left the edited content unstaged. Tags are not rewritten; the frozen D15 content is the commit
+  tagged **`prereg-D15-content`** (next commit). Both precede any non-smoke fit on pest data.

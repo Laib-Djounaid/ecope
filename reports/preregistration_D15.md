@@ -1,4 +1,4 @@
-# Pre-registration D15 (DRAFT): replication on agricultural pests
+# Pre-registration D15: replication on agricultural pests
 
 Purpose: test whether the D13/D14 findings (neighbour temporal leakage, causal rule, as-of model)
 replicate on crop pests with independent data, regions and taxa. Written before any model is fitted
@@ -64,3 +64,23 @@ Development CV results and N = 5 are descriptive. The transfer setting (T) is no
 
 Build data and hold-out manifest -> tag `prereg-D15` (this file frozen) -> tuning and development
 CV -> tag `frozen-D15` -> one hold-out run for the three cases, together with D13/D14.
+
+## 5. Implementation (fixed at freeze, before any non-smoke model fit)
+
+- Data build: `src/p01_build_pests.py` (deterministic; nodes subsample seed 0; hold-out = first fold of
+  StratifiedGroupKFold(5, shuffle, seed 0) over ~500 km blocks, stratified on y3; dev folds seed 42).
+  Effort counts start in 2005 (first year downloaded). Hold-out key SHA-256 (sorted GBIF keys):
+  - P1: `591038eb6271a20bddd4f6769b49e0e9158695677825cc8f946fd6ae562975f3` (5,730 nodes, 19 blocks).
+  - P2, P3: background download still running at freeze time; their tables are built by the same frozen
+    code and their SHA-256 are appended to `reports/pests/<case>_summary.json` and to the decision log
+    before any model is fitted on them. No other part of this file changes.
+- Models and tuning: `src/p02_pests_models.py`. Node features prior_log_n, prior_any, prior_years,
+  effort_log; context bio1, bio5, bio6, bio12, lat, lon; neighbour block (kNN means over causal / all
+  neighbours, records within 100 km and in the 50-100 km ring before t_i). As-of edge features recomputed
+  for pests; self-check j = i reproduces the node table, and all edges are checked: no counted record has
+  year >= t_i (asserted). Nodes with undefined y5 (t > 2020) stay in the graph, excluded from loss and
+  scores. Smoke test (2 trials, 2 epochs, deleted): runs end to end for all six models.
+- P1 development diagnostics (dates and records only, no model): 326,291 edges, D1 share later 0.344,
+  562 nodes isolated in the causal graph; D2 (N = 3): P(leaky | positive) 0.446 vs P(leaky | negative)
+  0.019, PR-AUC of the leak indicator alone 0.624 (prevalence 0.376).
+- Hold-out evaluation script: written later, frozen with tag `frozen-D15` before its single run.
