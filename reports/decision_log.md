@@ -405,3 +405,14 @@ only 37 of 178 blocks). Implementation detail fixed now, BEFORE the hold-out: a 
 whose resampled test set has no positive is dropped and the number of valid replicates is reported
 (the pre-registration did not specify this case; it produced NaN in one development CI). The same
 rule will be used in `src/10_holdout_d13.py`.
+
+## D15 (2026-11-19, draft direction): agricultural pest replication
+User: crop pests are acceptable for the thesis; left the choice of pests to Claude ("real contribution").
+Decision (Claude): replicate on three pests, two continents, three crop systems: Halyomorpha halys
+(Europe, orchards/vegetables), Spodoptera frugiperda (Africa, maize), Popillia japonica (Europe).
+Same questions as D13/D14 (neighbour leakage, causal rule, EcoPE-GAT_asof vs tabular). Target records
+from the public GBIF occurrence API (`tools/gbif_api_target.py`, manifest per species, to be cited as a
+GBIF derived dataset). Nodes (sampling events) = target-group background records (same insect order)
+aggregated to cell-year events; this needs a GBIF SQL download with the user account (credentials
+read from a local file outside the repository, never printed or committed). Full D15 pre-registration
+(regions, nodes, horizons, splits, sealed hold-out) to be written and shown BEFORE any modelling.
