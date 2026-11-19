@@ -416,3 +416,13 @@ GBIF derived dataset). Nodes (sampling events) = target-group background records
 aggregated to cell-year events; this needs a GBIF SQL download with the user account (credentials
 read from a local file outside the repository, never printed or committed). Full D15 pre-registration
 (regions, nodes, horizons, splits, sealed hold-out) to be written and shown BEFORE any modelling.
+
+## D15 data (2026-11-19, Claude, user absent for this choice)
+Target downloads (GBIF API, 2000-2025, no geospatial issue): Halyomorpha halys 150,578 records,
+Popillia japonica 80,302, Spodoptera frugiperda 9,943. **S. frugiperda dropped**: only ~260 records in
+Africa (KE 158, CM 64, ZA 41), its region of emergence; elsewhere native (Americas). Cases kept:
+H. halys Europe, H. halys North America, P. japonica North America (European mainland too sparse:
+IT 1,468, CH 291). Node design: random sample of target-group background records (Hemiptera /
+Coleoptera) as sampling events (Europe 150, North America 1,500 per country-year, seed 0); dated
+effort = exact GADM level-2 district counts per year (API facet). No GBIF account needed.
+`tools/gbif_api_background.py`.
