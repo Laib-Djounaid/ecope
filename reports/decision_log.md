@@ -432,3 +432,10 @@ First H4a run failed: tag `h4a_q0.25` made `Path.with_suffix` collapse every ref
 (`h4a_q0`), so refits were overwritten/reused (crash on length mismatch; no result produced or used).
 Fixed: tag `h4a_q025` etc.; `checkpoint.cached_refit` now asserts that names contain no dot. All D13/D14
 refit names checked: none contains a dot (1,260 files match the expected pattern). H4 a/c restarted.
+
+## Dev summary with EcoPE-GAT_asof (2026-11-19 ~14:30)
+N = 5 fold-mean: asof 0.419 (G_lgbm_nbr 0.456, EcoPE-GAT_causal 0.364); dev transfer: asof 0.091, best of
+the causal models (G_lgbm 0.075, G_lgbm_nbr 0.058, causal GAT 0.050). Diff asof - G_lgbm_nbr: CV -0.037
+[-0.074, +0.074], transfer +0.034 [-0.037, +0.165]. Per the D14 selection rule (development CV) the final
+model would be G_lgbm_nbr. Note: the block-bootstrap percentile CIs are skewed (point estimate close
+to the upper bound in several comparisons); kept as pre-registered, to be discussed in the paper.
