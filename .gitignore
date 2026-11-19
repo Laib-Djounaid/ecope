@@ -13,3 +13,4 @@ Guide for authors*.html
 data/external/
 data/gbif_effort_sql/*.zip
 data/raw_pests/*.parquet
+data/raw_pests/_ckpt_*.pkl

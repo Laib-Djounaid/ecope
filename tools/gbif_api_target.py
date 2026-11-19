@@ -32,7 +32,7 @@ def get(url, params, tries=6):
                 return r.json()
         except requests.RequestException:
             pass
-        time.sleep(2 ** k)
+        time.sleep(min(2 ** k, 120))
     raise RuntimeError(f"GBIF API failed: {url} {params}")
 
 

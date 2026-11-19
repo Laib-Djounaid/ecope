@@ -439,3 +439,18 @@ the causal models (G_lgbm 0.075, G_lgbm_nbr 0.058, causal GAT 0.050). Diff asof 
 [-0.074, +0.074], transfer +0.034 [-0.037, +0.165]. Per the D14 selection rule (development CV) the final
 model would be G_lgbm_nbr. Note: the block-bootstrap percentile CIs are skewed (point estimate close
 to the upper bound in several comparisons); kept as pre-registered, to be discussed in the paper.
+
+## 2026-11-19 — H4a result; D15 downloader made resumable; P1 tables
+
+- H4a (dev, frozen D13 protocol): fold-mean PR-AUC by q = 0/.25/.5/.75/1: 0.478, 0.451, 0.470, 0.451, 0.373;
+  slope -0.084, 95% block-bootstrap CI [-0.107, 0.069]; **not supported** (reported as is). The drop is
+  concentrated at q = 1 (removing all non-causal edges), consistent with H4b but not a monotone dose-response.
+- User said "arrette" mid-turn, then "reprends tout". The North-American background download had failed
+  meanwhile (GBIF API: 6 failed retries at Hemiptera CA 2020; nothing saved). Fix: `tools/gbif_api_background.py`
+  now checkpoints after every country-year (partial results + RNG state, so the sample equals an
+  uninterrupted run), 12 retries with waits capped at 120 s; relaunched with identical arguments
+  (--per 1500). Europe (P1) download unaffected.
+- `src/p01_build_pests.py`: P1 built (30,000 nodes; dev 24,270 / hold-out 5,730; hold-out SHA-256
+  591038eb…62975f3). Dev prevalence y3 = 0.376 (high: H. halys spread across W. Europe 2016-2025; PR-AUC
+  baselines will be high, so differences and the emergence subset R7 carry the information).
+  Note vs draft: effort counts start in 2005 (first downloaded year), not 2000; draft corrected before freeze.

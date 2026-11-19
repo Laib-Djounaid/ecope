@@ -1,0 +1,42 @@
+{
+ "case": "P1_halys_europe",
+ "target": "Halyomorpha_halys",
+ "background": "bg_Hemiptera_europe",
+ "n_nodes": 30000,
+ "n_dev": 24270,
+ "n_holdout": 5730,
+ "blocks_dev": 32,
+ "blocks_holdout": 19,
+ "holdout_keys_sha256": "591038eb6271a20bddd4f6769b49e0e9158695677825cc8f946fd6ae562975f3",
+ "prev_y3_dev": 0.3757313555830243,
+ "prev_y5_dev": 0.4262642178344576,
+ "share_prior_any_dev": 0.18875154511742892,
+ "emergence_nodes_dev": 19689,
+ "emergence_pos_y3_dev": 4807,
+ "share_effort_missing": 0.030033333333333332,
+ "share_climate_missing": 0.0003,
+ "years": {
+  "2008": 1327,
+  "2009": 1279,
+  "2010": 1397,
+  "2011": 1573,
+  "2012": 1458,
+  "2013": 1470,
+  "2014": 1526,
+  "2015": 1464,
+  "2016": 1594,
+  "2017": 1681,
+  "2018": 1790,
+  "2019": 1834,
+  "2020": 1916,
+  "2021": 1973,
+  "2022": 1988
+ },
+ "fold_prev_y3": {
+  "0": 0.3719,
+  "1": 0.3585,
+  "2": 0.3514,
+  "3": 0.4566,
+  "4": 0.3438
+ }
+}

@@ -23,7 +23,7 @@ manifests in `data/raw_pests/*_manifest.json`; cited as GBIF derived datasets.
   **Primary horizon N = 3** (invasions are fast, and it allows t_i up to 2022); N = 5 secondary.
 - **Node features (dated, year < t_i):** prior target count within 50 km (log1p), prior_any, number
   of years with a prior target record; dated effort = background records of the node's GADM level-2
-  district, years 2000 .. t_i - 1 (log1p, exact API counts).
+  district, years 2005 .. t_i - 1 (2005 = first downloaded year) (log1p, exact API counts).
 - **Context (static):** WorldClim 2.1 bio1, bio5, bio6, bio12 (10 arc-min) and latitude/longitude.
 - **Splits:** ~500 km spatial blocks; sealed hold-out = 20% of blocks (stratified on N = 3 block
   prevalence, seed 0), SHA-256 written to a manifest before any modelling and never loaded during

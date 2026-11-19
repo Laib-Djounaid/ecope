@@ -9,6 +9,9 @@ For one insect order (target group) and a list of countries, per country x year:
      proportion to the monthly counts.
 The target species itself is excluded from the background (taxonKey filter applied afterwards).
 Outputs: data/raw_pests/bg_<order>_<region>_{events,effort}.parquet + manifest JSON.
+Resumable: after every country-year the partial results and the random-generator state are saved to
+data/raw_pests/_ckpt_<stem>.pkl, so an interrupted run resumes with exactly the sample an uninterrupted
+run would have drawn (the checkpoint is deleted at the end). API calls retry 12 times (waits <= 120 s).
 
 Usage: python tools/gbif_api_background.py Hemiptera europe --exclude-key 4485843
 """
@@ -17,12 +20,17 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import pickle
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from gbif_api_target import API, get
+from gbif_api_target import API, get as _get
+
+
+def get(url, params):
+    return _get(url, params, tries=12)
 
 REGIONS = {
     "europe": ["AL", "AT", "BA", "BE", "BG", "CH", "CZ", "DE", "DK", "EE", "ES", "FI", "FR", "GB", "GR", "HR",
@@ -50,6 +58,15 @@ def main() -> None:
             "occurrenceStatus": "PRESENT"}
     rng = np.random.default_rng(a.seed)
     ev, eff, counts = [], [], {}
+    out = Path(a.out)
+    stem = f"bg_{a.order}_{a.region}"
+    ck = out / f"_ckpt_{stem}.pkl"
+    if ck.exists():
+        st = pickle.load(open(ck, "rb"))
+        assert st["args"] == vars(a), "checkpoint from different arguments"
+        ev, eff, counts = st["ev"], st["eff"], st["counts"]
+        rng.bit_generator.state = st["rng"]
+        print(f"resumed from checkpoint: {len(counts)} country-years done", flush=True)
 
     def sample(params, n, k):
         offs = np.unique(rng.integers(0, max(n - PAGE, 0) + 1, size=max(1, int(np.ceil(k / PAGE)))))
@@ -66,12 +83,16 @@ def main() -> None:
 
     for cc in REGIONS[a.region]:
         for y in range(a.y0, a.y1 + 1):
+            if f"{cc}-{y}" in counts:
+                continue
             q = {"country": cc, "year": y}
             r0 = get(f"{API}/occurrence/search", {**base, **q, "limit": 0, "facet": "gadmLevel2Gid",
                                                   "facetLimit": 5000})
             n = r0["count"]
             counts[f"{cc}-{y}"] = n
             if n == 0:
+                pickle.dump({"args": vars(a), "ev": ev, "eff": eff, "counts": counts,
+                             "rng": rng.bit_generator.state}, open(ck, "wb"))
                 continue
             for f in r0.get("facets", []):
                 eff += [{"countryCode": cc, "year": y, "gid2": c["name"], "n": c["count"]} for c in f["counts"]]
@@ -84,16 +105,17 @@ def main() -> None:
                     if nm:
                         ev += sample({**q, "month": mo}, nm, max(1, round(a.per * nm / n)))
             print(f"{a.order} {cc} {y}: {n:,} records; events so far {len(ev):,}", flush=True)
+            pickle.dump({"args": vars(a), "ev": ev, "eff": eff, "counts": counts,
+                         "rng": rng.bit_generator.state}, open(ck, "wb"))
     E = pd.DataFrame(ev).drop_duplicates("key")
     E = E[~E["speciesKey"].isin(a.exclude_key)]
-    out = Path(a.out)
-    stem = f"bg_{a.order}_{a.region}"
     E.to_parquet(out / f"{stem}_events.parquet", index=False)
     pd.DataFrame(eff).to_parquet(out / f"{stem}_effort.parquet", index=False)
     json.dump({"order": a.order, "taxonKey": m["usageKey"], "region": a.region, "filters": base,
                "exclude_speciesKeys": a.exclude_key, "per_country_year": a.per, "page": PAGE, "seed": a.seed,
                "years": [a.y0, a.y1], "retrieved_utc": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
                "n_events": int(len(E)), "counts": counts}, open(out / f"{stem}_manifest.json", "w"), indent=1)
+    ck.unlink()
 
 
 if __name__ == "__main__":
