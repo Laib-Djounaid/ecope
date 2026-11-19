@@ -56,6 +56,7 @@ def cached_refit(path: Path, fn):
     """Return the saved result of a refit, or compute it with fn() and save it.
     fn must return (dict of numpy arrays, dict of JSON-serialisable info)."""
     path = Path(path)
+    assert "." not in path.name, f"checkpoint name must not contain a dot (suffix clash): {path.name}"
     if path.with_suffix(".json").exists() and path.with_suffix(".npz").exists():
         arrs = dict(np.load(path.with_suffix(".npz")))
         return arrs, json.load(open(path.with_suffix(".json")))

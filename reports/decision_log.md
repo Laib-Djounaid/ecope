@@ -426,3 +426,9 @@ IT 1,468, CH 291). Node design: random sample of target-group background records
 Coleoptera) as sampling events (Europe 150, North America 1,500 per country-year, seed 0); dated
 effort = exact GADM level-2 district counts per year (API facet). No GBIF account needed.
 `tools/gbif_api_background.py`.
+
+## H4 bug fixed (2026-11-19, Claude)
+First H4a run failed: tag `h4a_q0.25` made `Path.with_suffix` collapse every refit onto one file
+(`h4a_q0`), so refits were overwritten/reused (crash on length mismatch; no result produced or used).
+Fixed: tag `h4a_q025` etc.; `checkpoint.cached_refit` now asserts that names contain no dot. All D13/D14
+refit names checked: none contains a dot (1,260 files match the expected pattern). H4 a/c restarted.

@@ -138,7 +138,7 @@ def main() -> None:
             keep = np.ones(ei0.shape[1], dtype=bool)
             keep[perm[: int(round(q * len(nc)))]] = False
             S[q] = {c: (d13_score("EcoPE-GAT_leaky", c, 5) if q == 0 else
-                        train(f"h4a_q{q:.2f}", c, ei0[:, keep], ew0[keep], prm[("EcoPE-GAT_leaky", c)]))
+                        train(f"h4a_q{int(round(q * 100)):03d}", c, ei0[:, keep], ew0[keep], prm[("EcoPE-GAT_leaky", c)]))
                     for c in folds}
             print(f"H4a q={q}: fold-mean {fold_mean(S[q], 5):.4f}", flush=True)
         obs = [fold_mean(S[q], 5) for q in QS]
