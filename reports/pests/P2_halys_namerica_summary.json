@@ -1,0 +1,42 @@
+{
+ "case": "P2_halys_namerica",
+ "target": "Halyomorpha_halys",
+ "background": "bg_Hemiptera_north_america",
+ "n_nodes": 30000,
+ "n_dev": 22607,
+ "n_holdout": 7393,
+ "blocks_dev": 62,
+ "blocks_holdout": 33,
+ "holdout_keys_sha256": "3b99294f4987bb1844e87817d560edb5183495860cfe14a8b58317ef4da296a4",
+ "prev_y3_dev": 0.42239129473172027,
+ "prev_y5_dev": 0.4373801751386082,
+ "share_prior_any_dev": 0.2650948821161587,
+ "emergence_nodes_dev": 16614,
+ "emergence_pos_y3_dev": 3679,
+ "share_effort_missing": 0.008833333333333334,
+ "share_climate_missing": 0.0002666666666666667,
+ "years": {
+  "2008": 1486,
+  "2009": 1546,
+  "2010": 1130,
+  "2011": 1198,
+  "2012": 1984,
+  "2013": 1598,
+  "2014": 1640,
+  "2015": 1343,
+  "2016": 1406,
+  "2017": 1389,
+  "2018": 1448,
+  "2019": 1508,
+  "2020": 1623,
+  "2021": 1735,
+  "2022": 1573
+ },
+ "fold_prev_y3": {
+  "0": 0.4297,
+  "1": 0.4195,
+  "2": 0.4198,
+  "3": 0.4226,
+  "4": 0.4204
+ }
+}

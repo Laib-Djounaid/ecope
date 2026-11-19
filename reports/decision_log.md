@@ -464,3 +464,12 @@ to the upper bound in several comparisons); kept as pre-registered, to be discus
 - Tagging slip: tag `prereg-D15` (commit d292207) captured only the file rename, because a failed
   `git add` left the edited content unstaged. Tags are not rewritten; the frozen D15 content is the commit
   tagged **`prereg-D15-content`** (next commit). Both precede any non-smoke fit on pest data.
+
+## 2026-11-19 — P1 development run done; P2 built
+
+- P1 tuning + refits finished (`logs/p02_P1.log`). Inner-validation PR-AUC (all_dev, N = 3, tuning):
+  G_lgbm 0.851, G_lgbm_nbr 0.892, G_lgbm_nbr_leaky 0.901, EcoPE-GAT_leaky 0.801, EcoPE-GAT_causal 0.845,
+  EcoPE-GAT_asof 0.882 (tuning values, optimistic; not results).
+- P2 built with the frozen `p01_build_pests.py` before any fit on it: 30,000 nodes, dev 22,607 / hold-out
+  7,393 (62 / 33 blocks), hold-out SHA-256 `3b99294f4987bb1844e87817d560edb5183495860cfe14a8b58317ef4da296a4`,
+  dev prevalence y3 0.422, prior_any 0.265, emergence nodes 16,614 (3,679 y3-positive).
