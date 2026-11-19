@@ -473,3 +473,16 @@ to the upper bound in several comparisons); kept as pre-registered, to be discus
 - P2 built with the frozen `p01_build_pests.py` before any fit on it: 30,000 nodes, dev 22,607 / hold-out
   7,393 (62 / 33 blocks), hold-out SHA-256 `3b99294f4987bb1844e87817d560edb5183495860cfe14a8b58317ef4da296a4`,
   dev prevalence y3 0.422, prior_any 0.265, emergence nodes 16,614 (3,679 y3-positive).
+
+## 2026-11-19 — P1 development summary (`src/p03_pests_dev_summary.py`, descriptive)
+
+CV fold-mean PR-AUC (seed-mean, 3 seeds), N = 3 / N = 5: EcoPE-GAT_asof 0.868 / 0.842, G_lgbm_nbr_leaky
+0.867 / 0.848, G_lgbm_nbr 0.855 / 0.817, EcoPE-GAT_causal 0.811 / 0.771, G_lgbm 0.801 / 0.771,
+EcoPE-GAT_leaky 0.761 / 0.763. Paired differences (95% block bootstrap within folds), N = 3:
+asof - causal +0.058 [0.020, 0.119]; asof - G_lgbm_nbr +0.014 [-0.025, 0.064] (N = 5: +0.024 [0.004, 0.108]);
+G_lgbm_nbr_leaky - G_lgbm_nbr +0.012 [-0.005, 0.053] (N = 5: +0.030 [0.006, 0.095]);
+**EcoPE-GAT_leaky - causal -0.050 [-0.066, -0.003]** (opposite of the D13 direction; reported as is).
+Final model (rule D14 s3 at N = 3): EcoPE-GAT_asof. R7 analogue, emergence nodes (19,689; 4,807 pos):
+asof - persistence +0.162 [0.087, 0.209]; PR-AUC - prevalence +0.385.
+Reading: leakage exists in the data (D2) and the tabular model exploits it, but the leaky GAT does not
+gain from it here; the as-of model is the best causal model. No change to any frozen plan.
