@@ -552,3 +552,10 @@ G_lgbm_nbr - persistence +0.244 [0.077, 0.341]; PR-AUC - prevalence +0.612.
   (P2: GAT leaky 0.522 vs causal 0.402).
 - Fixed-weight hybrid (mean of within-fold ranks of G_lgbm_nbr and asof_plus, no tuning): P1 0.874 / 0.843,
   P2 0.909 / 0.845 (N = 3 / 5); small gains, recorded only.
+
+## 2026-11-20 — asof_plus on P3 (dev, exploratory)
+
+asof_plus 0.944 / 0.923 (N = 3 / 5) vs G_lgbm_nbr 0.948 / 0.939: -0.004 [-0.037, 0.023] / -0.016
+[-0.095, 0.015]. Emergence nodes N = 3: G_lgbm_nbr 0.701, asof_plus 0.627, hybrid 0.673; N = 5: 0.808,
+0.677, 0.741. On P3 the graph models are clearly behind on emergence. Summary over the three pest cases:
+asof_plus > G_lgbm_nbr on P1, tie on P2, behind on P3 (emergence).
