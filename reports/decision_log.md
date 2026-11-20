@@ -499,3 +499,10 @@ gain from it here; the as-of model is the best causal model. No change to any fr
   model never run by default (the frozen D15 model set and outputs are unchanged); summary pairs added.
 - Plan: P1, P2, P3 dev runs, then the pathogen data. If kept, pre-registered as D16 (incl. this having been
   chosen after seeing development results) and tagged before the single hold-out run. Decision by Claude.
+
+## 2026-11-20 — P3 built
+
+- Coleoptera North America background download complete (no retry needed after the fix).
+- P3 built with the frozen `p01_build_pests.py` before any fit on it: 30,000 nodes, dev 24,401 / hold-out
+  5,599 (80 / 20 blocks), hold-out SHA-256 `64023ddb219c74141334fd2c5f05ccb10f42c67d1745814fdac392506782ca67`,
+  dev prevalence y3 0.359, prior_any 0.329, emergence nodes 16,380 (1,464 y3-positive).

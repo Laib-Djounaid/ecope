@@ -1,0 +1,42 @@
+{
+ "case": "P3_popillia_namerica",
+ "target": "Popillia_japonica",
+ "background": "bg_Coleoptera_north_america",
+ "n_nodes": 30000,
+ "n_dev": 24401,
+ "n_holdout": 5599,
+ "blocks_dev": 80,
+ "blocks_holdout": 20,
+ "holdout_keys_sha256": "64023ddb219c74141334fd2c5f05ccb10f42c67d1745814fdac392506782ca67",
+ "prev_y3_dev": 0.3586738248432441,
+ "prev_y5_dev": 0.37722147907510034,
+ "share_prior_any_dev": 0.3287160362280234,
+ "emergence_nodes_dev": 16380,
+ "emergence_pos_y3_dev": 1464,
+ "share_effort_missing": 0.0098,
+ "share_climate_missing": 0.0004,
+ "years": {
+  "2008": 1372,
+  "2009": 1648,
+  "2010": 1721,
+  "2011": 1598,
+  "2012": 1582,
+  "2013": 1698,
+  "2014": 1259,
+  "2015": 1532,
+  "2016": 1672,
+  "2017": 1742,
+  "2018": 1745,
+  "2019": 1600,
+  "2020": 1763,
+  "2021": 1730,
+  "2022": 1739
+ },
+ "fold_prev_y3": {
+  "0": 0.531,
+  "1": 0.3085,
+  "2": 0.3012,
+  "3": 0.2795,
+  "4": 0.2945
+ }
+}
