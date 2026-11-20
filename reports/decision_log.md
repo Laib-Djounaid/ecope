@@ -515,3 +515,10 @@ EcoPE-GAT_asof 0.900 / 0.842, EcoPE-GAT_leaky 0.897 / 0.873, G_lgbm 0.895 / 0.86
 causal N = 5 +0.047 [0.012, 0.080] (N = 3 CIs include 0). asof - G_lgbm_nbr N = 3 -0.006 [-0.019, 0.014];
 asof - causal N = 3 +0.010 [-0.008, 0.045]. Final model (rule, N = 3): G_lgbm_nbr (asof 0.0059 below,
 just outside the 0.005 tie margin). Emergence: G_lgbm_nbr - persistence +0.125 [0.080, 0.192].
+
+## 2026-11-20 — H4c done (descriptive)
+
+Leaky - causal EcoPE-GAT CV fold-mean gap at N = 5, by graph (D2 P(leaky | pos) / P(leaky | neg)):
+knn5 +0.053 (0.215 / 0.002), knn10 +0.114 (0.302 / 0.005), knn20 +0.097 (0.413 / 0.012), radius50 +0.110
+(0.481 / 0.016), radius100 +0.146 (0.533 / 0.024). The gap is positive for every graph and largest for the
+graph with most leakage; the k = 5 graph leaks least. Output: reports/dev_results/h4c.csv.
