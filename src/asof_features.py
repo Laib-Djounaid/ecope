@@ -118,3 +118,34 @@ def leak_check(e: pd.DataFrame, cfg: dict, ei: torch.Tensor, xe: pd.DataFrame, N
         used = yrs[src[k]][:n]                    # the n earliest records = those with year < t_i
         bad += int(((used > t[dst[k]]) & (used <= t[dst[k]] + N)).any() or (used >= t[dst[k]]).any())
     return {"edges_checked": int(len(idx)), "edges_with_window_information": bad}
+
+
+# --------------------------------------------------------------------------- D16 candidate: asof_plus
+PLUS = ["prior100_log_n", "prior_ring50_100_log_n"]
+
+
+def asof_radius(e: pd.DataFrame, cfg: dict, ei: torch.Tensor) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Radius block of G_lgbm_nbr (target records within 100 km, and in the 50-100 km ring, year < t)
+    for the nodes (as of their own year) and for every edge j -> i (neighbour j, as of t_i).
+    Self-check: node values reproduce neighbour_features.neighbour_block."""
+    R, B = cfg["spatial"]["earth_radius_km"], cfg["spatial"]["buffer_km"]
+    V = variant_name(cfg["gbif"]["missing_uncertainty"], cfg["gbif"]["basis_of_record_main"])
+    rec = pd.read_parquet(p(cfg, "processed_dir") / f"gbif_filtered_{V}.parquet",
+                          columns=["decimalLatitude", "decimalLongitude", "year"])
+    rec = rec[rec["year"].notna()]
+    ry = rec["year"].to_numpy().astype(int)
+    tree = BallTree(np.radians(rec[["decimalLatitude", "decimalLongitude"]].to_numpy()), metric="haversine")
+    ind, dist = tree.query_radius(np.radians(e[["Latitude", "Longitude"]].to_numpy()), r=100 / R,
+                                  return_distance=True)
+    y100 = [np.sort(ry[ix]) for ix in ind]
+    y50 = [np.sort(ry[ix][d * R <= B]) for ix, d in zip(ind, dist)]
+    t = e["survey_year"].to_numpy().astype(int)
+
+    def f(j, ti):
+        n100 = np.array([np.searchsorted(y100[a], b, side="left") for a, b in zip(j, ti)])
+        n50 = np.array([np.searchsorted(y50[a], b, side="left") for a, b in zip(j, ti)])
+        return pd.DataFrame({"prior100_log_n": np.log1p(n100), "prior_ring50_100_log_n": np.log1p(n100 - n50)})
+
+    node = f(np.arange(len(e)), t)
+    src, dst = ei.numpy()
+    return node, f(src, t[dst])

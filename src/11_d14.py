@@ -15,11 +15,13 @@ import json
 import time
 
 import numpy as np
+import pandas as pd
 import optuna
 import torch
 from sklearn.metrics import average_precision_score as AP
 
-from asof_features import COLS, asof_edges, leak_check
+from asof_features import COLS, PLUS, asof_edges, asof_radius, leak_check
+from neighbour_features import neighbour_block
 from checkpoint import cached_refit, run_study
 from common import load_config, p
 from features import FoldPreprocessor, assemble, labels, load_modelling_table, raw_blocks
@@ -36,13 +38,19 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--contexts", nargs="+", default=d13.CONTEXTS, choices=d13.CONTEXTS)
     ap.add_argument("--threads", type=int, default=8)
+    ap.add_argument("--plus", action="store_true", help="D16 candidate EcoPE-GAT_asof_plus (exploratory, "
+                    "development only): adds the radius block of G_lgbm_nbr, as of t_i, to node and edge "
+                    "features; outputs to <results_dir>/d16")
     ap.add_argument("--smoke", action="store_true", help="code check only (2 trials, 2 epochs, 1 seed, N=5), "
                     "writes to <results_dir>/d14_smoke, deleted afterwards, never a result")
     a = ap.parse_args()
     torch.set_num_threads(a.threads)
     cfg = load_config()
     dc = cfg["d13"]
-    out = p(cfg, "results_dir") / "d14"
+    global MODEL
+    out = p(cfg, "results_dir") / ("d16" if a.plus else "d14")
+    if a.plus:
+        MODEL = "EcoPE-GAT_asof_plus"
     if a.smoke:
         dc = {**dc, "n_trials": 2, "max_epochs": 2, "seeds": [0], "horizons": [5]}
         out = p(cfg, "results_dir") / "d14_smoke"
@@ -56,6 +64,12 @@ def main() -> None:
                            cfg["spatial"]["buffer_km"], cfg["spatial"]["earth_radius_km"])
     t0 = time.time()
     xe_raw, ea = asof_edges(e, cfg, ei, ew)
+    if a.plus:
+        rn, re_ = asof_radius(e, cfg, ei)
+        ref = neighbour_block(e, blk, cfg, causal=True)
+        assert np.allclose(rn[PLUS].to_numpy(), ref[PLUS].to_numpy()), "radius block not reproduced"
+        blk = {**blk, "plus": rn}
+        xe_raw = pd.concat([xe_raw.reset_index(drop=True), re_], axis=1)
     chk = {f"N{N}": leak_check(e, cfg, ei, xe_raw, N) for N in dc["horizons"]}
     chk.update({"n_edges": int(ei.shape[1]), "edges_removed": 0,
                 "min_in_degree": int(np.bincount(ei[1].numpy(), minlength=len(e)).min())})
@@ -68,9 +82,9 @@ def main() -> None:
         tr, iv, te = ctxs[c]
         name = f"{MODEL}_{c}"
         t0 = time.time()
-        Xn = assemble(blk, d13.NODE)
+        Xn = assemble(blk, d13.NODE + (["plus"] if a.plus else []))
         pre = FoldPreprocessor().fit(Xn, tr)            # one preprocessor for node and edge features
-        x, xe = pre.transform(Xn), pre.transform(xe_raw[COLS])
+        x, xe = pre.transform(Xn), pre.transform(xe_raw[list(Xn.columns)])
         C = FoldPreprocessor().fit(assemble(blk, d13.CTX), tr).transform(assemble(blk, d13.CTX))
         data = {"x": torch.as_tensor(x), "xe": torch.as_tensor(xe), "ctx": torch.as_tensor(C),
                 "edge_index": ei, "ea": ea}
