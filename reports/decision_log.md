@@ -530,3 +530,9 @@ asof_plus - G_lgbm_nbr N = 3 +0.018 [-0.010, 0.071], N = 5 +0.029 [0.010, 0.102]
 [-0.010, 0.022]; asof_plus - G_lgbm_nbr_leaky +0.006 [-0.038, 0.037] (N = 3): matches the leaky tabular
 model without leakage. Note: adding pairs shifts the shared bootstrap RNG stream, so CIs of the earlier
 pairs moved in the third decimal versus the previous P1 entry (point estimates identical).
+
+## 2026-11-20 — asof_plus on P2 (dev, exploratory)
+
+EcoPE-GAT_asof_plus 0.903 (N = 3) / 0.838 (N = 5); G_lgbm_nbr 0.905 / 0.848. asof_plus - G_lgbm_nbr
+N = 3 -0.002 [-0.012, 0.018] (tie), N = 5 -0.011 [-0.055, 0.035]; asof_plus - asof +0.004 [-0.006, 0.016].
+P2 is near ceiling; no model separates from G_lgbm_nbr.
