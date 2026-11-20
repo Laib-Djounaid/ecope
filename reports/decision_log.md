@@ -567,3 +567,10 @@ P1 N3 0.854 / 0.605 (G_lgbm_nbr 0.855 / 0.620; asof_plus 0.872 / 0.658); P2 N3 0
 N5 0.875 / 0.613 (0.848 / 0.582); P3 N3 0.949 / 0.731 (0.948 / 0.701), N5 0.933 / 0.813 (0.939 / 0.808).
 No single model dominates across cases. Pathogen asof_plus cv0 (first fold): N5 0.633 vs asof 0.656,
 G_lgbm_nbr 0.650. Decision pending the user (what to pre-register as the proposed model).
+
+## 2026-11-20 — D16 direction chosen by the user
+
+User: "On va pour 2 et 1 en même temps". Contribution = the as-of neighbour encoding (EcoPE family) in a
+graph model and a tabular model; flagship = EcoPE-GAT_asof_plus. Draft `reports/preregistration_D16_draft.md`
+(hypotheses E1-E6, disclosure that both models were designed after seeing development results).
+`src/14_d16_lgbm_asof.py`: G_lgbm_nbr_asof on pathogens (D13 protocol), launched.
