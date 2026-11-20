@@ -522,3 +522,11 @@ Leaky - causal EcoPE-GAT CV fold-mean gap at N = 5, by graph (D2 P(leaky | pos) 
 knn5 +0.053 (0.215 / 0.002), knn10 +0.114 (0.302 / 0.005), knn20 +0.097 (0.413 / 0.012), radius50 +0.110
 (0.481 / 0.016), radius100 +0.146 (0.533 / 0.024). The gap is positive for every graph and largest for the
 graph with most leakage; the k = 5 graph leaks least. Output: reports/dev_results/h4c.csv.
+
+## 2026-11-20 — asof_plus on P1 (dev, exploratory)
+
+EcoPE-GAT_asof_plus CV fold-mean 0.872 (N = 3) / 0.846 (N = 5), best causal model on P1 (asof 0.868 / 0.842).
+asof_plus - G_lgbm_nbr N = 3 +0.018 [-0.010, 0.071], N = 5 +0.029 [0.010, 0.102]; asof_plus - asof +0.004
+[-0.010, 0.022]; asof_plus - G_lgbm_nbr_leaky +0.006 [-0.038, 0.037] (N = 3): matches the leaky tabular
+model without leakage. Note: adding pairs shifts the shared bootstrap RNG stream, so CIs of the earlier
+pairs moved in the third decimal versus the previous P1 entry (point estimates identical).
