@@ -544,3 +544,11 @@ EcoPE-GAT_leaky 0.943 / 0.949, EcoPE-GAT_asof 0.942 / 0.936, EcoPE-GAT_causal 0.
 GAT leaky - causal N = 5 +0.030 [0.002, 0.111]; asof - G_lgbm_nbr N = 3 -0.006 [-0.036, 0.008];
 asof - causal +0.013 [-0.014, 0.047]. Final model (rule): G_lgbm_nbr. Emergence (16,380 nodes, 1,464 pos):
 G_lgbm_nbr - persistence +0.244 [0.077, 0.341]; PR-AUC - prevalence +0.612.
+
+## 2026-11-20 — exploratory dev analyses (not pre-registered; scripts in tools/exploratory/)
+
+- Emergence nodes (prior_any = 0), CV fold-mean PR-AUC N = 3, G_lgbm_nbr vs asof_plus: P1 0.620 vs 0.658,
+  P2 0.492 vs 0.497; P3 G_lgbm_nbr 0.701 vs asof 0.623 (asof_plus running). Leaky models gain most here
+  (P2: GAT leaky 0.522 vs causal 0.402).
+- Fixed-weight hybrid (mean of within-fold ranks of G_lgbm_nbr and asof_plus, no tuning): P1 0.874 / 0.843,
+  P2 0.909 / 0.845 (N = 3 / 5); small gains, recorded only.
