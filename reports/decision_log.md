@@ -486,3 +486,16 @@ Final model (rule D14 s3 at N = 3): EcoPE-GAT_asof. R7 analogue, emergence nodes
 asof - persistence +0.162 [0.087, 0.209]; PR-AUC - prevalence +0.385.
 Reading: leakage exists in the data (D2) and the tabular model exploits it, but the leaky GAT does not
 gain from it here; the as-of model is the best causal model. No change to any frozen plan.
+
+## 2026-11-20 — D16 candidate EcoPE-GAT_asof_plus (exploratory, development only)
+
+- User (2026-11-20): the contribution must be a model ("une réelle contrib comme EcoPE-GAT ou variant").
+  Contribution framed as the model **EcoPE-GAT_asof** (temporally consistent message passing), with
+  leaky/causal/tabular models as references.
+- Weak point: on pathogens asof < G_lgbm_nbr (-0.037). Likely cause: G_lgbm_nbr sees the 100 km / 50-100 km
+  ring record counts, asof does not. Variant **EcoPE-GAT_asof_plus**: same architecture and search space;
+  node features + as-of edge features also include those two counts (computed as of t_i, so no window
+  information; self-check j = i reproduces persist100). Added to `src/p02_pests_models.py` as an extra
+  model never run by default (the frozen D15 model set and outputs are unchanged); summary pairs added.
+- Plan: P1, P2, P3 dev runs, then the pathogen data. If kept, pre-registered as D16 (incl. this having been
+  chosen after seeing development results) and tagged before the single hold-out run. Decision by Claude.

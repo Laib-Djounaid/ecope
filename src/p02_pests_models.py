@@ -43,6 +43,12 @@ pb = importlib.import_module("p01_build_pests")
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 
 MODELS = ["G_lgbm", "G_lgbm_nbr", "G_lgbm_nbr_leaky", "EcoPE-GAT_leaky", "EcoPE-GAT_causal", "EcoPE-GAT_asof"]
+# D16 candidate (exploratory, development only; not part of the frozen D15 model set, never run by default):
+# EcoPE-GAT_asof_plus = EcoPE-GAT_asof whose node and as-of edge features also carry the radius block of
+# G_lgbm_nbr (target records within 100 km and in the 50-100 km ring, year < t_i), so the graph model sees
+# the same information as the tabular reference.
+EXTRA = ["EcoPE-GAT_asof_plus"]
+PLUS = ["prior100_log_n", "prior_ring50_100_log_n"]
 NODE = ["prior_log_n", "prior_any", "prior_years", "effort_log"]
 CTX = ["bio1", "bio5", "bio6", "bio12", "lat", "lon"]
 N_TRIALS, SEEDS, HORIZONS, TUNE_N = 20, [0, 1, 2], [3, 5], 3
@@ -76,6 +82,12 @@ def feats_asof(j: np.ndarray, ti: np.ndarray, yrs50, uyrs50, cum, gid2) -> pd.Da
                          "prior_years": ny.astype(float), "effort_log": np.log1p(e)})
 
 
+def plus_asof(j, ti, yrs50, yrs100) -> pd.DataFrame:
+    n100 = np.array([np.searchsorted(yrs100[a], b, side="left") for a, b in zip(j, ti)])
+    n50 = np.array([np.searchsorted(yrs50[a], b, side="left") for a, b in zip(j, ti)])
+    return pd.DataFrame({"prior100_log_n": np.log1p(n100), "prior_ring50_100_log_n": np.log1p(n100 - n50)})
+
+
 def neighbour_block(d: pd.DataFrame, X: pd.DataFrame, ei, ew, causal: bool, yrs100, yrs50) -> pd.DataFrame:
     t = d["t"].to_numpy()
     if causal:
@@ -102,7 +114,7 @@ def neighbour_block(d: pd.DataFrame, X: pd.DataFrame, ei, ew, causal: bool, yrs1
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("case", choices=list(pb.CASES))
-    ap.add_argument("--models", nargs="+", default=MODELS, choices=MODELS)
+    ap.add_argument("--models", nargs="+", default=MODELS, choices=MODELS + EXTRA)
     ap.add_argument("--threads", type=int, default=8)
     ap.add_argument("--smoke", action="store_true", help="code check only (2 trials, 2 epochs, 1 seed), "
                     "writes to results/pests_smoke, never a result")
@@ -148,6 +160,9 @@ def main() -> None:
            "G_lgbm_nbr_leaky": neighbour_block(d, X, ei, ew, False, yrs100, yrs50)}
     src, dst = ei.numpy()
     xe_raw = feats_asof(src, t[dst], yrs50, uyrs50, cum, gid2)
+    Xp = pd.concat([X, plus_asof(me, t, yrs50, yrs100)], axis=1)
+    assert np.allclose(Xp["prior100_log_n"], d["persist100"])
+    xe_plus = pd.concat([xe_raw, plus_asof(src, t[dst], yrs50, yrs100)], axis=1)
     ea = torch.as_tensor(np.stack([B * (1 / ew.numpy() - 1) / B, (t[dst] - t[src]) / 10.0], 1), dtype=torch.float32)
     # as-of leak check (all edges): counted records of j must all be < t_i
     n_used = np.round(np.expm1(xe_raw["prior_log_n"].to_numpy())).astype(int)
@@ -174,8 +189,12 @@ def main() -> None:
         if m.startswith("G_lgbm"):
             Z = pd.concat([X, Cdf] + ([nbr[m]] if m in nbr else []), axis=1)
             return {"X": FoldPreprocessor().fit(Z, tr).transform(Z)}
-        pre = FoldPreprocessor().fit(X, tr)
         C = FoldPreprocessor().fit(Cdf, tr).transform(Cdf)
+        if m == "EcoPE-GAT_asof_plus":
+            pre = FoldPreprocessor().fit(Xp, tr)
+            return {"x": torch.as_tensor(pre.transform(Xp)), "xe": torch.as_tensor(pre.transform(xe_plus[NODE + PLUS])),
+                    "ctx": torch.as_tensor(C), "edge_index": ei, "ea": ea}
+        pre = FoldPreprocessor().fit(X, tr)
         if m == "EcoPE-GAT_asof":
             return {"x": torch.as_tensor(pre.transform(X)), "xe": torch.as_tensor(pre.transform(xe_raw[NODE])),
                     "ctx": torch.as_tensor(C), "edge_index": ei, "ea": ea}
@@ -189,7 +208,7 @@ def main() -> None:
         if m.startswith("G_lgbm"):
             return tab.fit_predict("lgbm", prm, data["X"], y, tr, iv, seed, a.threads, fixed)
         torch.manual_seed(seed)
-        if m == "EcoPE-GAT_asof":
+        if m.startswith("EcoPE-GAT_asof"):
             net = AsOfGAT(data["x"].shape[1], data["ctx"].shape[1], ea.shape[1], prm["hidden"], prm["dropout"],
                           ecope_form=prm["encoder"])
         else:
@@ -210,7 +229,7 @@ def main() -> None:
         def objective(trial):
             if m.startswith("G_lgbm"):
                 prm = tab.suggest("lgbm", trial, cfg["tabular"]["search_space"])
-            elif m == "EcoPE-GAT_asof":
+            elif m.startswith("EcoPE-GAT_asof"):
                 prm = tab.suggest("gnn", trial, {"gnn": cfg["d14"]["asof_space"]})
             else:
                 prm = tab.suggest("gnn", trial, {"gnn": dc["gnn_space"]})

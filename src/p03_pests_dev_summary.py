@@ -23,11 +23,14 @@ from sklearn.metrics import average_precision_score as AP
 
 from common import ROOT, load_config, p
 
-MODELS = ["G_lgbm", "G_lgbm_nbr", "G_lgbm_nbr_leaky", "EcoPE-GAT_leaky", "EcoPE-GAT_causal", "EcoPE-GAT_asof"]
+MODELS = ["G_lgbm", "G_lgbm_nbr", "G_lgbm_nbr_leaky", "EcoPE-GAT_leaky", "EcoPE-GAT_causal", "EcoPE-GAT_asof",
+          "EcoPE-GAT_asof_plus"]          # last one: D16 candidate, summarised only if its refits exist
 CAUSAL = ["G_lgbm_nbr", "EcoPE-GAT_causal", "EcoPE-GAT_asof"]
 PAIRS = [("EcoPE-GAT_leaky", "EcoPE-GAT_causal"), ("EcoPE-GAT_leaky", "G_lgbm_nbr"),
          ("EcoPE-GAT_causal", "G_lgbm_nbr"), ("G_lgbm_nbr_leaky", "G_lgbm_nbr"), ("G_lgbm_nbr", "G_lgbm"),
-         ("EcoPE-GAT_asof", "G_lgbm_nbr"), ("EcoPE-GAT_asof", "EcoPE-GAT_causal")]
+         ("EcoPE-GAT_asof", "G_lgbm_nbr"), ("EcoPE-GAT_asof", "EcoPE-GAT_causal"),
+         ("EcoPE-GAT_asof_plus", "G_lgbm_nbr"), ("EcoPE-GAT_asof_plus", "G_lgbm_nbr_leaky"),
+         ("EcoPE-GAT_asof_plus", "EcoPE-GAT_asof")]
 SEEDS, HORIZONS, PRIMARY, N_BOOT = [0, 1, 2], [3, 5], 3, 2000
 
 
