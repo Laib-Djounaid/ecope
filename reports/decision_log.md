@@ -582,3 +582,4 @@ CV fold-mean N = 5 / 7 / 10: 0.448 / 0.513 / 0.556 vs G_lgbm_nbr 0.456 / 0.528 /
 pathogens. EcoPE-GAT_asof_plus: cv0 0.632, cv1 0.366 (asof 0.656, 0.355; G_lgbm_nbr 0.650, 0.364); the
 summary's fold mean for it (0.500) covers only 2 folds and is not comparable. `src/12_dev_summary.py`
 extended to the D16 models (longest-prefix model-name matching).
+- 2026-11-20 15:00: second process for the pathogen asof_plus run on contexts all_dev and dev_transfer (logs/d16_b.log) to use idle cores; the first process (cv0..cv4) reaches them last and will reuse the checkpoints (Optuna SQLite, cached refits). Results identical by construction (same seeds, same code).
