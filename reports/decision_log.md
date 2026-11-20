@@ -536,3 +536,11 @@ pairs moved in the third decimal versus the previous P1 entry (point estimates i
 EcoPE-GAT_asof_plus 0.903 (N = 3) / 0.838 (N = 5); G_lgbm_nbr 0.905 / 0.848. asof_plus - G_lgbm_nbr
 N = 3 -0.002 [-0.012, 0.018] (tie), N = 5 -0.011 [-0.055, 0.035]; asof_plus - asof +0.004 [-0.006, 0.016].
 P2 is near ceiling; no model separates from G_lgbm_nbr.
+
+## 2026-11-20 — P3 development summary (descriptive)
+
+CV fold-mean N = 3 / N = 5: G_lgbm_nbr_leaky 0.950 / 0.947, G_lgbm_nbr 0.948 / 0.939, G_lgbm 0.945 / 0.931,
+EcoPE-GAT_leaky 0.943 / 0.949, EcoPE-GAT_asof 0.942 / 0.936, EcoPE-GAT_causal 0.929 / 0.920 (ceiling).
+GAT leaky - causal N = 5 +0.030 [0.002, 0.111]; asof - G_lgbm_nbr N = 3 -0.006 [-0.036, 0.008];
+asof - causal +0.013 [-0.014, 0.047]. Final model (rule): G_lgbm_nbr. Emergence (16,380 nodes, 1,464 pos):
+G_lgbm_nbr - persistence +0.244 [0.077, 0.341]; PR-AUC - prevalence +0.612.

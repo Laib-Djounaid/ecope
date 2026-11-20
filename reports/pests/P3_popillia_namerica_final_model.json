@@ -1,0 +1,10 @@
+{
+ "case": "P3_popillia_namerica",
+ "final_model": "G_lgbm_nbr",
+ "rule": "D14 s3 / D15 s3: highest dev CV fold-mean among ['G_lgbm_nbr', 'EcoPE-GAT_causal', 'EcoPE-GAT_asof'] at N=3, ties < 0.005 to the earlier",
+ "fold_means": {
+  "G_lgbm_nbr": 0.9481709621533645,
+  "EcoPE-GAT_causal": 0.9288543443821137,
+  "EcoPE-GAT_asof": 0.9420362497431085
+ }
+}
