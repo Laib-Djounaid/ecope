@@ -9,7 +9,7 @@ for case in ["P1_halys_europe", "P2_halys_namerica", "P3_popillia_namerica"]:
     em = d["prior_any"].to_numpy() == 0
     for N in (3, 5):
         row = {}
-        for m in ["G_lgbm", "G_lgbm_nbr", "G_lgbm_nbr_leaky", "EcoPE-GAT_causal", "EcoPE-GAT_leaky", "EcoPE-GAT_asof", "EcoPE-GAT_asof_plus"]:
+        for m in ["G_lgbm", "G_lgbm_nbr", "G_lgbm_nbr_leaky", "EcoPE-GAT_causal", "EcoPE-GAT_leaky", "EcoPE-GAT_asof", "EcoPE-GAT_asof_plus", "G_lgbm_nbr_asof"]:
             v = []
             for k in range(5):
                 fs = [ref / f"{m}_cv{k}_N{N}_s{s}.npz" for s in (0, 1, 2)]

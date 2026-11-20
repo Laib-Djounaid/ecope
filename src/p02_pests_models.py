@@ -47,7 +47,9 @@ MODELS = ["G_lgbm", "G_lgbm_nbr", "G_lgbm_nbr_leaky", "EcoPE-GAT_leaky", "EcoPE-
 # EcoPE-GAT_asof_plus = EcoPE-GAT_asof whose node and as-of edge features also carry the radius block of
 # G_lgbm_nbr (target records within 100 km and in the 50-100 km ring, year < t_i), so the graph model sees
 # the same information as the tabular reference.
-EXTRA = ["EcoPE-GAT_asof_plus"]
+EXTRA = ["EcoPE-GAT_asof_plus", "G_lgbm_nbr_asof"]
+# G_lgbm_nbr_asof (exploratory): G_lgbm_nbr whose kNN block averages the neighbours' features AS OF t_i over
+# ALL neighbours (no edge removed, no window information), i.e. the as-of encoding with a tabular learner.
 PLUS = ["prior100_log_n", "prior_ring50_100_log_n"]
 NODE = ["prior_log_n", "prior_any", "prior_years", "effort_log"]
 CTX = ["bio1", "bio5", "bio6", "bio12", "lat", "lon"]
@@ -219,6 +221,20 @@ def main() -> None:
                                      pos_weight=float((y[tr] == 0).sum() / (y[tr] == 1).sum()),
                                      max_epochs=max_ep, patience=dc["patience"], seed=seed)
         return predict(net, data), info
+
+    xa = xe_raw[NODE].to_numpy()
+    deg_all = np.bincount(dst, minlength=len(d)).astype(float)
+
+    def amean(v):
+        f = np.isfinite(v)
+        c = np.bincount(dst, weights=f, minlength=len(d))
+        return np.where(c > 0, np.bincount(dst, weights=np.where(f, v, 0.0), minlength=len(d)) / np.maximum(c, 1), np.nan)
+    amx = np.zeros(len(d))
+    np.maximum.at(amx, dst, xa[:, 1])
+    nbr["G_lgbm_nbr_asof"] = pd.concat([pd.DataFrame({
+        "nbr_prior_log_n_mean": amean(xa[:, 0]), "nbr_prior_any_max": amx, "nbr_prior_years_mean": amean(xa[:, 2]),
+        "nbr_effort_log_mean": amean(xa[:, 3]), "nbr_n": deg_all}),
+        nbr["G_lgbm_nbr"][["prior100_log_n", "prior_ring50_100_log_n"]]], axis=1)
 
     for m in a.models:
         t0 = time.time()

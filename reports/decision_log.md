@@ -559,3 +559,11 @@ asof_plus 0.944 / 0.923 (N = 3 / 5) vs G_lgbm_nbr 0.948 / 0.939: -0.004 [-0.037,
 [-0.095, 0.015]. Emergence nodes N = 3: G_lgbm_nbr 0.701, asof_plus 0.627, hybrid 0.673; N = 5: 0.808,
 0.677, 0.741. On P3 the graph models are clearly behind on emergence. Summary over the three pest cases:
 asof_plus > G_lgbm_nbr on P1, tie on P2, behind on P3 (emergence).
+
+## 2026-11-20 — exploratory G_lgbm_nbr_asof (dev; as-of neighbour encoding with LightGBM)
+
+Added to `src/p02_pests_models.py` as extra model (not default). CV fold-mean (all / emergence nodes):
+P1 N3 0.854 / 0.605 (G_lgbm_nbr 0.855 / 0.620; asof_plus 0.872 / 0.658); P2 N3 0.910 / 0.514 (0.905 / 0.492),
+N5 0.875 / 0.613 (0.848 / 0.582); P3 N3 0.949 / 0.731 (0.948 / 0.701), N5 0.933 / 0.813 (0.939 / 0.808).
+No single model dominates across cases. Pathogen asof_plus cv0 (first fold): N5 0.633 vs asof 0.656,
+G_lgbm_nbr 0.650. Decision pending the user (what to pre-register as the proposed model).
