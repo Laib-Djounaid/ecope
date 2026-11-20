@@ -1,0 +1,15 @@
+{
+ "model": "G_lgbm_nbr_asof",
+ "context": "cv2",
+ "best_params": {
+  "learning_rate": 0.01802019761039029,
+  "num_leaves": 28,
+  "min_child_samples": 102,
+  "subsample": 0.5485506378965306,
+  "colsample_bytree": 0.8865614352491626,
+  "reg_lambda": 0.002423224390060893,
+  "balanced": true
+ },
+ "best_value": 0.7015012251529663,
+ "n_trials": 30
+}

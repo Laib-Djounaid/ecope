@@ -1,0 +1,15 @@
+{
+ "model": "G_lgbm_nbr_asof",
+ "context": "dev_transfer",
+ "best_params": {
+  "learning_rate": 0.10263424399607039,
+  "num_leaves": 147,
+  "min_child_samples": 162,
+  "subsample": 0.5142553619476504,
+  "colsample_bytree": 0.33513322844184046,
+  "reg_lambda": 0.004622450422729359,
+  "balanced": true
+ },
+ "best_value": 0.7055708107168666,
+ "n_trials": 30
+}

@@ -24,7 +24,12 @@ d13 = importlib.import_module("09_d13")
 PAIRS = [("EcoPE-GAT_leaky", "EcoPE-GAT_causal"), ("EcoPE-GAT_leaky", "G_lgbm_nbr"),
          ("EcoPE-GAT_causal", "G_lgbm_nbr"), ("EcoPE-GAT_causal", "GAT_noctx_causal"),
          ("G_lgbm_nbr_leaky", "G_lgbm_nbr"), ("G_lgbm_nbr", "G_lgbm"),
-         ("EcoPE-GAT_asof", "G_lgbm_nbr"), ("EcoPE-GAT_asof", "EcoPE-GAT_causal")]
+         ("EcoPE-GAT_asof", "G_lgbm_nbr"), ("EcoPE-GAT_asof", "EcoPE-GAT_causal"),
+         # D16 (exploratory until prereg-D16)
+         ("G_lgbm_nbr_asof", "G_lgbm_nbr"), ("G_lgbm_nbr_asof", "G_lgbm_nbr_leaky"),
+         ("EcoPE-GAT_asof_plus", "EcoPE-GAT_causal"), ("EcoPE-GAT_asof_plus", "G_lgbm_nbr"),
+         ("EcoPE-GAT_asof_plus", "G_lgbm_nbr_asof")]
+EXTRA = ["EcoPE-GAT_asof", "EcoPE-GAT_asof_plus", "G_lgbm_nbr_asof"]
 
 
 def main() -> None:
@@ -36,11 +41,11 @@ def main() -> None:
     blocks = e["block_id"].to_numpy()
     res = p(cfg, "results_dir")
     S = {}                                               # (model, context, N) -> seed-mean test score
-    for d in ["d13", "d14"]:
+    for d in ["d13", "d14", "d16"]:
         for f in sorted((res / d / "refits").glob("*.npz")):
             m, rest = f.stem.rsplit("_N", 1)
             N, sd = rest.split("_s")
-            model, c = next((mm, m[len(mm) + 1:]) for mm in d13.ALL_MODELS + ["EcoPE-GAT_asof"]
+            model, c = next((mm, m[len(mm) + 1:]) for mm in sorted(d13.ALL_MODELS + EXTRA, key=len, reverse=True)
                             if m.startswith(mm + "_") and m[len(mm) + 1:] in d13.CONTEXTS)
             S.setdefault((model, c, int(N)), []).append(np.load(f)["test"])
     S = {k: np.mean(v, 0) for k, v in S.items() if len(v) == len(dc["seeds"])}
@@ -84,7 +89,7 @@ def main() -> None:
                 diffs.append({"N": N, "setting": setting, "a": a_, "b": b_, "diff": obs, "ci_lo": lo, "ci_hi": hi,
                               "n_valid_replicates": int(np.isfinite(boot).sum())})
     pd.DataFrame(diffs).to_csv(out / "differences.csv", index=False, float_format="%.4f")
-    for d in ["d13", "d14"]:
+    for d in ["d13", "d14", "d16"]:
         for f in (res / d / "params").glob("*.json"):
             shutil.copy(f, out / "params" / f.name)
     print(summ[summ.N == 5].to_string(index=False))

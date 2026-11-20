@@ -574,3 +574,11 @@ User: "On va pour 2 et 1 en même temps". Contribution = the as-of neighbour enc
 graph model and a tabular model; flagship = EcoPE-GAT_asof_plus. Draft `reports/preregistration_D16_draft.md`
 (hypotheses E1-E6, disclosure that both models were designed after seeing development results).
 `src/14_d16_lgbm_asof.py`: G_lgbm_nbr_asof on pathogens (D13 protocol), launched.
+
+## 2026-11-20 — pathogen G_lgbm_nbr_asof (dev, exploratory)
+
+CV fold-mean N = 5 / 7 / 10: 0.448 / 0.513 / 0.556 vs G_lgbm_nbr 0.456 / 0.528 / 0.560; N = 5 difference
+-0.008 [-0.046, 0.070]; transfer +0.010 [-0.008, 0.043]. No gain over the causal tabular reference on
+pathogens. EcoPE-GAT_asof_plus: cv0 0.632, cv1 0.366 (asof 0.656, 0.355; G_lgbm_nbr 0.650, 0.364); the
+summary's fold mean for it (0.500) covers only 2 folds and is not comparable. `src/12_dev_summary.py`
+extended to the D16 models (longest-prefix model-name matching).
