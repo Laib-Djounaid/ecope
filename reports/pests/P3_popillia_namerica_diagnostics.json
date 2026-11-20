@@ -1,0 +1,21 @@
+{
+ "case": "P3_popillia_namerica",
+ "n_dev": 24401,
+ "edges": 352848,
+ "D1_share_edges_later": 0.22423536480297465,
+ "D1_median_node_share_later": 0.09090909090909091,
+ "nodes_isolated_in_causal_graph": 606,
+ "median_in_degree": 12.0,
+ "median_causal_in_degree": 10.0,
+ "D2_N3": {
+  "N": 3,
+  "D2_edges_with_window_records": 0.05805049199655376,
+  "D2_P_leaky_given_pos": 0.5091407678244972,
+  "D2_P_leaky_given_neg": 0.013738897054124864,
+  "D2_PR_AUC_indicator_alone": 0.6617640447178612,
+  "prevalence": 0.3586738248432441
+ },
+ "asof_edges_with_records_at_or_after_t_i": 0,
+ "asof_edges_removed": 0,
+ "min_in_degree": 10
+}

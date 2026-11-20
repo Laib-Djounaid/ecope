@@ -506,3 +506,12 @@ gain from it here; the as-of model is the best causal model. No change to any fr
 - P3 built with the frozen `p01_build_pests.py` before any fit on it: 30,000 nodes, dev 24,401 / hold-out
   5,599 (80 / 20 blocks), hold-out SHA-256 `64023ddb219c74141334fd2c5f05ccb10f42c67d1745814fdac392506782ca67`,
   dev prevalence y3 0.359, prior_any 0.329, emergence nodes 16,380 (1,464 y3-positive).
+
+## 2026-11-20 — P2 development summary (descriptive)
+
+CV fold-mean PR-AUC N = 3 / N = 5: G_lgbm_nbr_leaky 0.920 / 0.895, G_lgbm_nbr 0.905 / 0.848,
+EcoPE-GAT_asof 0.900 / 0.842, EcoPE-GAT_leaky 0.897 / 0.873, G_lgbm 0.895 / 0.869, EcoPE-GAT_causal
+0.889 / 0.847 (near ceiling). Leakage gains: GAT leaky - causal N = 5 +0.026 [0.001, 0.082]; LGBM leaky -
+causal N = 5 +0.047 [0.012, 0.080] (N = 3 CIs include 0). asof - G_lgbm_nbr N = 3 -0.006 [-0.019, 0.014];
+asof - causal N = 3 +0.010 [-0.008, 0.045]. Final model (rule, N = 3): G_lgbm_nbr (asof 0.0059 below,
+just outside the 0.005 tie margin). Emergence: G_lgbm_nbr - persistence +0.125 [0.080, 0.192].
