@@ -1,0 +1,13 @@
+{
+ "model": "EcoPE-GAT_asof_plus",
+ "context": "dev_transfer",
+ "best_params": {
+  "encoder": "mlp",
+  "hidden": 128,
+  "dropout": 0.3659230772583242,
+  "lr": 0.00034220288409923355,
+  "weight_decay": 0.00011383754187886811
+ },
+ "best_value": 0.6185679542849161,
+ "n_trials": 30
+}
