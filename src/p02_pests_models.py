@@ -118,6 +118,8 @@ def main() -> None:
     ap.add_argument("case", choices=list(pb.CASES))
     ap.add_argument("--models", nargs="+", default=MODELS, choices=MODELS + EXTRA)
     ap.add_argument("--threads", type=int, default=8)
+    ap.add_argument("--holdout", action="store_true", help="single confirmatory run (src/holdout.py): no tuning, "
+                    "all_dev hyperparameters, setting S, outputs to <results_dir>/holdout/pests/<case>")
     ap.add_argument("--smoke", action="store_true", help="code check only (2 trials, 2 epochs, 1 seed), "
                     "writes to results/pests_smoke, never a result")
     a = ap.parse_args()
@@ -132,8 +134,14 @@ def main() -> None:
         out = p(cfg, "results_dir") / "pests_smoke" / a.case
     out.mkdir(parents=True, exist_ok=True)
     tgt, bg = pb.CASES[a.case]
-    d = pd.read_parquet(ROOT / "data" / "processed" / "pests" / f"{a.case}_dev.parquet")
-    assert not d["holdout"].any()
+    if a.holdout:
+        import holdout as H
+        dev_out, out = out, H.out_dir(cfg, f"pests/{a.case}")
+        d, hctx = H.pest_setup(a.case)
+        globals()["cached_refit"] = H.guard(cached_refit)
+    else:
+        d = pd.read_parquet(ROOT / "data" / "processed" / "pests" / f"{a.case}_dev.parquet")
+        assert not d["holdout"].any()
     R, B, K = cfg["spatial"]["earth_radius_km"], cfg["spatial"]["buffer_km"], cfg["graph"]["k"]
     assert B == pb.B
     t = d["t"].to_numpy().astype(int)
@@ -174,7 +182,7 @@ def main() -> None:
             "D2_N3": d2(ei.numpy(), t, Y[3].astype(int), yrs50, 3)[0],
             "asof_edges_with_records_at_or_after_t_i": bad, "asof_edges_removed": 0,
             "min_in_degree": int(np.bincount(dst, minlength=len(d)).min())}
-    rep = ROOT / "reports" / ("pests_smoke" if a.smoke else "pests")
+    rep = ROOT / "reports" / ("pests_smoke" if a.smoke else "holdout" if a.holdout else "pests")
     rep.mkdir(parents=True, exist_ok=True)
     json.dump(diag, open(rep / f"{a.case}_diagnostics.json", "w"), indent=1)
     print(json.dumps(diag), flush=True)
@@ -235,6 +243,24 @@ def main() -> None:
         "nbr_prior_log_n_mean": amean(xa[:, 0]), "nbr_prior_any_max": amx, "nbr_prior_years_mean": amean(xa[:, 2]),
         "nbr_effort_log_mean": amean(xa[:, 3]), "nbr_n": deg_all}),
         nbr["G_lgbm_nbr"][["prior100_log_n", "prior_ring50_100_log_n"]]], axis=1)
+
+    if a.holdout:                                     # setting S only, dev hyperparameters, no tuning
+        for m in a.models:
+            t0 = time.time()
+            best = H.best_params(dev_out, m, "S")
+            tr, iv, te = hctx["S"]
+            data = build(m, tr)
+            for N in HORIZONS:
+                teN = te[ok[N][te]]
+                for sd in seeds:
+                    def refit(N=N, sd=sd, data=data, tr=tr, iv=iv, teN=teN):
+                        s, info = run(m, data, best, N, sd, tr, iv)
+                        info = {k_: v for k_, v in info.items() if np.isscalar(v)}
+                        return ({"test": s[teN].astype(np.float32), "test_idx": teN},
+                                {"case": a.case, "model": m, "context": "S", "N": N, "seed": sd, **info})
+                    cached_refit(out / "refits" / f"{m}_S_N{N}_s{sd}", refit)
+            print(f"[{a.case} {m}] hold-out refits done ({time.time() - t0:.0f}s)", flush=True)
+        return
 
     for m in a.models:
         t0 = time.time()

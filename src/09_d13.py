@@ -78,6 +78,8 @@ def main() -> None:
     ap.add_argument("--models", nargs="+", default=ALL_MODELS, choices=ALL_MODELS)
     ap.add_argument("--contexts", nargs="+", default=CONTEXTS, choices=CONTEXTS)
     ap.add_argument("--threads", type=int, default=8)
+    ap.add_argument("--holdout", action="store_true", help="single confirmatory run (src/holdout.py): no tuning, "
+                    "dev hyperparameters, settings T and S, outputs to <results_dir>/holdout/pathogens")
     ap.add_argument("--smoke", action="store_true", help="code check only: 2 trials, 2 epochs, 1 seed, N=5, "
                     "writes to <results_dir>/d13_smoke (deleted afterwards, never a result)")
     a = ap.parse_args()
@@ -89,8 +91,15 @@ def main() -> None:
         dc = {**dc, "n_trials": 2, "max_epochs": 2, "seeds": [0], "horizons": [5]}
         cfg["tabular"]["fixed"] = {**cfg["tabular"]["fixed"], "lgbm_max_rounds": 5}
         out = p(cfg, "results_dir") / "d13_smoke"
-    e = load_modelling_table(cfg)                       # development only
-    assert "holdout" in e.columns and not e["holdout"].any()
+    if a.holdout:
+        import holdout as H
+        dev_out, out = out, H.out_dir(cfg, "pathogens")
+        e, ctxs = H.pathogen_setup(cfg)
+        globals()["cached_refit"] = H.guard(cached_refit)
+        a.contexts = list(ctxs)
+    else:
+        e = load_modelling_table(cfg)                   # development only
+        assert "holdout" in e.columns and not e["holdout"].any()
     Y = {N: labels(e, cfg, N) for N in dc["horizons"]}
     blk = raw_blocks(e, cfg)
     if any(m in LGBM_MODELS for m in a.models):
@@ -99,7 +108,8 @@ def main() -> None:
     ei0, ew0 = geo_knn_graph(e[["Latitude", "Longitude"]].to_numpy(), cfg["graph"]["k"],
                              cfg["spatial"]["buffer_km"], cfg["spatial"]["earth_radius_km"])
     graphs = {"leaky": (ei0, ew0), "causal": time_causal(ei0, ew0, e["survey_year"].to_numpy())}
-    ctxs = contexts(e, cfg)
+    if not a.holdout:
+        ctxs = contexts(e, cfg)
     fixed = cfg["tabular"]["fixed"]
     print(f"development plots {len(e):,}; edges leaky {ei0.shape[1]:,} causal {graphs['causal'][0].shape[1]:,}", flush=True)
 
@@ -150,12 +160,15 @@ def main() -> None:
                     trial.set_user_attr("epochs", info.get("epochs"))
                     return info["best_val_pr_auc"]
 
-            study = run_study(name, out / "optuna", objective, dc["n_trials"], seed=0)
-            best = study.best_params
-            (out / "params").mkdir(parents=True, exist_ok=True)
-            json.dump({"model": m, "context": c, "best_params": best, "best_value": study.best_value,
-                       "n_trials": len(study.trials)}, open(out / "params" / f"{name}.json", "w"), indent=1)
-            print(f"[{name}] tuned: inner PR-AUC {study.best_value:.3f} {best} ({time.time() - t0:.0f}s)", flush=True)
+            if a.holdout:
+                best = H.best_params(dev_out, m, c)
+            else:
+                study = run_study(name, out / "optuna", objective, dc["n_trials"], seed=0)
+                best = study.best_params
+                (out / "params").mkdir(parents=True, exist_ok=True)
+                json.dump({"model": m, "context": c, "best_params": best, "best_value": study.best_value,
+                           "n_trials": len(study.trials)}, open(out / "params" / f"{name}.json", "w"), indent=1)
+                print(f"[{name}] tuned: inner PR-AUC {study.best_value:.3f} {best} ({time.time() - t0:.0f}s)", flush=True)
             if c == "all_dev":
                 continue
             for N in dc["horizons"]:
@@ -163,7 +176,7 @@ def main() -> None:
                     def refit(N=N, sd=sd):
                         s, info = run(best, N, sd)
                         info = {k_: v for k_, v in info.items() if np.isscalar(v)}
-                        return ({"test": s[te].astype(np.float32), "val": s[iv].astype(np.float32)},
+                        return ({"test": s[te].astype(np.float32), "val": s[iv].astype(np.float32), "test_idx": te},
                                 {"model": m, "context": c, "N": N, "seed": sd,
                                  "test_pr_auc": float(AP(Y[N][te], s[te])), **info})
                     _, info = cached_refit(out / "refits" / f"{name}_N{N}_s{sd}", refit)
