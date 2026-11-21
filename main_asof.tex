@@ -337,7 +337,7 @@ where $h_i$ is the embedding of receiver $i$; $m_{j \to i}$ is the message of ed
       box/.style={draw, rounded corners=2pt, align=center, minimum height=0.9cm, inner sep=4pt},
       dat/.style={box, fill=blue!6},
       net/.style={box, fill=orange!12},
-      out/.style={box, fill=green!10}]
+      outbox/.style={box, fill=green!10}]
     % receiver lane
     \node[dat] (xi) at (0,2.2) {$x_i = x_i(t_i)$\\ receiver features};
     \node[dat] (ci) at (0,0.9) {$c_i$\\ context};
@@ -352,7 +352,7 @@ where $h_i$ is the embedding of receiver $i$; $m_{j \to i}$ is the message of ed
     % attention and readout
     \node[net] (att) at (8.6,0.2) {attention\\ $\alpha_{ji}$, $\sum_j \alpha_{ji} m_{j\to i}$};
     \node[net] (ro) at (11.6,1.2) {readout\\ MLP $[h_i \,\|\, z_i]$};
-    \node[out] (y) at (14.2,1.2) {$\hat{y}_i^{(N)}$};
+    \node[outbox] (y) at (14.2,1.2) {$\hat{y}_i^{(N)}$};
     % arrows
     \draw[->] (xi) -- (hi);
     \draw[->] (ci) -- (pi);
