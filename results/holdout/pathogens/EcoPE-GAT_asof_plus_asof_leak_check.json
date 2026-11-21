@@ -1,0 +1,17 @@
+{
+ "N5": {
+  "edges_checked": 20000,
+  "edges_with_window_information": 0
+ },
+ "N7": {
+  "edges_checked": 20000,
+  "edges_with_window_information": 0
+ },
+ "N10": {
+  "edges_checked": 20000,
+  "edges_with_window_information": 0
+ },
+ "n_edges": 560128,
+ "edges_removed": 0,
+ "min_in_degree": 10
+}

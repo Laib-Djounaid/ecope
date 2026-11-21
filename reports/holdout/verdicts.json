@@ -1,0 +1,96 @@
+{
+ "pathogens": {
+  "H1": false,
+  "H1b": false,
+  "H5": false,
+  "H6": false,
+  "H7": true,
+  "H9": false,
+  "H2_H3_H8": "reported as is (superiority tests, no verdict)",
+  "E1": false,
+  "E2": false,
+  "E5": true
+ },
+ "P1_halys_europe": {
+  "R1": false,
+  "R1b": false,
+  "R5": false,
+  "R7": true,
+  "R9": true,
+  "E1": true,
+  "E2": false,
+  "E5": true
+ },
+ "P2_halys_namerica": {
+  "R1": false,
+  "R1b": false,
+  "R5": false,
+  "R7": true,
+  "R9": false,
+  "E1": false,
+  "E2": false,
+  "E5": true
+ },
+ "P3_popillia_namerica": {
+  "R1": false,
+  "R1b": false,
+  "R5": false,
+  "R7": false,
+  "R9": true,
+  "E1": false,
+  "E2": false,
+  "E5": false
+ },
+ "replication_D15 (>= 2 of 3 cases)": {
+  "R1": false,
+  "R1b": false,
+  "R5": false,
+  "R7": true,
+  "R9": true
+ },
+ "E3 (H9/R9 and E2 each in >= 3 of 4)": {
+  "as-of vs removal, graph": {
+   "pathogens": false,
+   "P1_halys_europe": true,
+   "P2_halys_namerica": false,
+   "P3_popillia_namerica": true
+  },
+  "as-of vs removal, tabular": {
+   "pathogens": false,
+   "P1_halys_europe": false,
+   "P2_halys_namerica": false,
+   "P3_popillia_namerica": false
+  },
+  "supported": false
+ },
+ "E6_share_of_leakage_gain_recovered": {
+  "pathogens": {
+   "EcoPE-GAT_asof": 0.42157030443005833,
+   "EcoPE-GAT_asof_plus": 0.5010058376090505,
+   "G_lgbm_nbr_asof": 0.6367679920254952,
+   "leaky_gain_gnn": 0.09561377593772263,
+   "leaky_gain_lgbm": 0.09128799594596443
+  },
+  "P1_halys_europe": {
+   "EcoPE-GAT_asof": -1.0530743934310869,
+   "EcoPE-GAT_asof_plus": -1.457896054522356,
+   "G_lgbm_nbr_asof": 0.553487996733988,
+   "leaky_gain_gnn": -0.025181797542658924,
+   "leaky_gain_lgbm": 0.0159656610566693
+  },
+  "P2_halys_namerica": {
+   "EcoPE-GAT_asof": -0.26948129844110524,
+   "EcoPE-GAT_asof_plus": -1.1185302376236894,
+   "G_lgbm_nbr_asof": 0.19445010005474225,
+   "leaky_gain_gnn": -0.006812231060068008,
+   "leaky_gain_lgbm": -0.00040862443184586095
+  },
+  "P3_popillia_namerica": {
+   "EcoPE-GAT_asof": 3.2859333320223523,
+   "EcoPE-GAT_asof_plus": -3.1272029505543015,
+   "G_lgbm_nbr_asof": 0.9282606256208714,
+   "leaky_gain_gnn": 0.010046619754536579,
+   "leaky_gain_lgbm": 0.004698863901804962
+  }
+ }
+}
