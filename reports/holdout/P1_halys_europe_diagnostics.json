@@ -1,0 +1,21 @@
+{
+ "case": "P1_halys_europe",
+ "n_dev": 30000,
+ "edges": 405748,
+ "D1_share_edges_later": 0.34128818872797895,
+ "D1_median_node_share_later": 0.2857142857142857,
+ "nodes_isolated_in_causal_graph": 723,
+ "median_in_degree": 12.0,
+ "median_causal_in_degree": 9.0,
+ "D2_N3": {
+  "N": 3,
+  "D2_edges_with_window_records": 0.047154884312430374,
+  "D2_P_leaky_given_pos": 0.45107503290917067,
+  "D2_P_leaky_given_neg": 0.018435904326793873,
+  "D2_PR_AUC_indicator_alone": 0.6313571346257774,
+  "prevalence": 0.37983333333333336
+ },
+ "asof_edges_with_records_at_or_after_t_i": 0,
+ "asof_edges_removed": 0,
+ "min_in_degree": 10
+}

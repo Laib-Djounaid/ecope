@@ -1,0 +1,21 @@
+{
+ "case": "P2_halys_namerica",
+ "n_dev": 30000,
+ "edges": 431651,
+ "D1_share_edges_later": 0.24188522672251425,
+ "D1_median_node_share_later": 0.13333333333333333,
+ "nodes_isolated_in_causal_graph": 660,
+ "median_in_degree": 12.0,
+ "median_causal_in_degree": 10.0,
+ "D2_N3": {
+  "N": 3,
+  "D2_edges_with_window_records": 0.07314010624323818,
+  "D2_P_leaky_given_pos": 0.5077976971286985,
+  "D2_P_leaky_given_neg": 0.019105541221280255,
+  "D2_PR_AUC_indicator_alone": 0.7112350442266937,
+  "prevalence": 0.4574
+ },
+ "asof_edges_with_records_at_or_after_t_i": 0,
+ "asof_edges_removed": 0,
+ "min_in_degree": 10
+}

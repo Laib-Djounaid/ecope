@@ -1,0 +1,184 @@
+{
+ "note": "computed before any hold-out model was fitted; no prediction involved",
+ "pathogens_final_model": {
+  "final_model": "G_lgbm_nbr",
+  "rule": "D14 s3: highest dev spatial-CV fold-mean PR-AUC (N = 5) among ['G_lgbm_nbr', 'EcoPE-GAT_causal', 'GAT_noctx_causal', 'EcoPE-GAT_asof'], ties < 0.005 to the earlier",
+  "fold_means": {
+   "G_lgbm_nbr": 0.456,
+   "EcoPE-GAT_causal": 0.3644,
+   "GAT_noctx_causal": 0.3601,
+   "EcoPE-GAT_asof": 0.4192
+  }
+ },
+ "pathogens": {
+  "T": {
+   "test_plots": 3629,
+   "test_blocks": 27,
+   "D1_receivers_in_test": {
+    "edges_received": 44958,
+    "D1_share_edges_later": 0.18741936918902086,
+    "D1_median_node_share_later": 0.0,
+    "test_nodes_isolated_in_causal_graph": 22,
+    "median_in_degree": 12.0,
+    "median_causal_in_degree": 10.0
+   },
+   "isolated_test_nodes_causal_graph": 22,
+   "pos_N5": 97,
+   "pos_N7": 134,
+   "pos_N10": 139,
+   "emergence_subset": {
+    "plots": 3575,
+    "pos_N5": 79,
+    "pos_N7": 116,
+    "pos_N10": 121
+   },
+   "non_isolated_subset": {
+    "plots": 3607,
+    "pos_N5": 97,
+    "pos_N7": 133,
+    "pos_N10": 138
+   }
+  },
+  "S": {
+   "test_plots": 7920,
+   "test_blocks": 92,
+   "D1_receivers_in_test": {
+    "edges_received": 100772,
+    "D1_share_edges_later": 0.17181359901559956,
+    "D1_median_node_share_later": 0.0,
+    "test_nodes_isolated_in_causal_graph": 59,
+    "median_in_degree": 12.0,
+    "median_causal_in_degree": 10.0
+   },
+   "isolated_test_nodes_causal_graph": 59,
+   "pos_N5": 355,
+   "pos_N7": 483,
+   "pos_N10": 562,
+   "emergence_subset": {
+    "plots": 7613,
+    "pos_N5": 228,
+    "pos_N7": 349,
+    "pos_N10": 423
+   },
+   "non_isolated_subset": {
+    "plots": 7861,
+    "pos_N5": 353,
+    "pos_N7": 479,
+    "pos_N10": 558
+   }
+  }
+ },
+ "pests": {
+  "P1_halys_europe": {
+   "test_nodes": 5730,
+   "test_blocks": 19,
+   "D1_receivers_in_test": {
+    "edges_received": 79439,
+    "D1_share_edges_later": 0.32908269238031695,
+    "D1_median_node_share_later": 0.2727272727272727,
+    "test_nodes_isolated_in_causal_graph": 162,
+    "median_in_degree": 12.0,
+    "median_causal_in_degree": 9.0
+   },
+   "D2_N3_test": {
+    "P_leaky_given_pos": 0.47231985940246046,
+    "P_leaky_given_neg": 0.015344528083381586,
+    "PR_AUC_indicator_alone": 0.6597261294224601,
+    "prevalence": 0.39720767888307157
+   },
+   "N3": {
+    "scored_nodes": 5730,
+    "pos": 2276,
+    "emergence_nodes": 4350,
+    "emergence_pos": 910
+   },
+   "D2_N5_test": {
+    "P_leaky_given_pos": 0.6415822479498312,
+    "P_leaky_given_neg": 0.02202283849918434,
+    "PR_AUC_indicator_alone": 0.7807483096036905,
+    "prevalence": 0.45812154696132595
+   },
+   "N5": {
+    "scored_nodes": 4525,
+    "pos": 2073,
+    "emergence_nodes": 3800,
+    "emergence_pos": 1349
+   },
+   "final_model": "EcoPE-GAT_asof"
+  },
+  "P2_halys_namerica": {
+   "test_nodes": 7393,
+   "test_blocks": 33,
+   "D1_receivers_in_test": {
+    "edges_received": 110194,
+    "D1_share_edges_later": 0.19611775595767464,
+    "D1_median_node_share_later": 0.0625,
+    "test_nodes_isolated_in_causal_graph": 104,
+    "median_in_degree": 11.0,
+    "median_causal_in_degree": 10.0
+   },
+   "D2_N3_test": {
+    "P_leaky_given_pos": 0.4598610112628804,
+    "P_leaky_given_neg": 0.010869565217391304,
+    "PR_AUC_indicator_alone": 0.7565069895556245,
+    "prevalence": 0.5644528608142838
+   },
+   "N3": {
+    "scored_nodes": 7393,
+    "pos": 4173,
+    "emergence_nodes": 4736,
+    "emergence_pos": 1521
+   },
+   "D2_N5_test": {
+    "P_leaky_given_pos": 0.5493279229013441,
+    "P_leaky_given_neg": 0.011204481792717087,
+    "PR_AUC_indicator_alone": 0.8181633674400997,
+    "prevalence": 0.612076994722136
+   },
+   "N5": {
+    "scored_nodes": 6442,
+    "pos": 3943,
+    "emergence_nodes": 4495,
+    "emergence_pos": 1996
+   },
+   "final_model": "G_lgbm_nbr"
+  },
+  "P3_popillia_namerica": {
+   "test_nodes": 5599,
+   "test_blocks": 20,
+   "D1_receivers_in_test": {
+    "edges_received": 82916,
+    "D1_share_edges_later": 0.21902889671474746,
+    "D1_median_node_share_later": 0.08333333333333333,
+    "test_nodes_isolated_in_causal_graph": 145,
+    "median_in_degree": 12.0,
+    "median_causal_in_degree": 10.0
+   },
+   "D2_N3_test": {
+    "P_leaky_given_pos": 0.5597519729425028,
+    "P_leaky_given_neg": 0.01699346405228758,
+    "PR_AUC_indicator_alone": 0.6648518685367353,
+    "prevalence": 0.31684229326665475
+   },
+   "N3": {
+    "scored_nodes": 5599,
+    "pos": 1774,
+    "emergence_nodes": 3972,
+    "emergence_pos": 244
+   },
+   "D2_N5_test": {
+    "P_leaky_given_pos": 0.5652390438247012,
+    "P_leaky_given_neg": 0.012332990750256937,
+    "PR_AUC_indicator_alone": 0.7250488546491993,
+    "prevalence": 0.4075502334077532
+   },
+   "N5": {
+    "scored_nodes": 4927,
+    "pos": 2008,
+    "emergence_nodes": 3746,
+    "emergence_pos": 841
+   },
+   "final_model": "G_lgbm_nbr"
+  }
+ }
+}
