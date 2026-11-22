@@ -246,12 +246,12 @@ where $y_i^{(N)} \in \{0,1\}$ is the emergence label of plot $i$ for horizon $N$
 \subsubsection{EcoPE-GAT Architecture}
 \label{sec:architecture}
 
-EcoPE-GAT has three components: an ecological positional encoder (EcoPE), which embeds the environmental context of each site; a graph attention layer, which aggregates messages from geographic neighbours; and a readout, which maps the result to the probability of a new record (Figure~\ref{fig:ecopegat}). We describe it in five steps: we formalise the task and the graph; we write the standard form of graph attention and show that, on dated sites, it creates a temporal leak, which the usual edge-deletion rule removes at a cost; we introduce as-of message passing and prove its properties; and we define the EcoPE encoder and the attention layer of EcoPE-GAT. Figure~\ref{fig:architecture} details the final model.
+EcoPE-GAT has three components: an ecological positional encoder (EcoPE), which embeds the environmental context of each site; a graph attention layer, which aggregates messages from geographic neighbours; and a readout, which maps the result to the probability of a new record (Figure~\ref{fig:ecopegat}). We describe it in five steps: we formalise the task and the graph; we write the standard form of graph attention and show that, on dated sites, it creates a temporal leak, which the usual edge-deletion rule removes at a cost; we introduce as-of message passing and prove its properties; and we define the EcoPE encoder and the attention layer of EcoPE-GAT.
 
 \begin{figure}[pos=t]
   \centering
-  \includegraphics[width=\linewidth]{figures/ecope_gat_architecture.png}
-  \caption{Overall design of EcoPE-GAT. Node features $X$ are enriched with the EcoPE embedding $P$ of each node's ecological context (climate, location, biome) before graph attention and an MLP readout produce the probability of a new record within $N$ years. The figure shows the first configuration explored during development (functional-trait features, $k$ nearest neighbours in trait space, two standard GAT layers; Section~\ref{sec:history}). In the final model, nodes carry dated prior-presence and effort features on a geographic $k$-nearest-neighbour graph, and the two GAT layers are replaced by one as-of attention layer (Figure~\ref{fig:architecture}).}
+  \includegraphics[width=\linewidth]{figures/ecope_gat_architecture.pdf}
+  \caption{Overall architecture of EcoPE-GAT. (1)~Each site carries time-stamped features computed from records before its survey year $t_i$ and (2)~is connected to its $k$ nearest geographic neighbours, which may have been surveyed earlier or later. The EcoPE encoder (top) maps the ecological context of every site to an embedding $p_v$. (3)~The receiver embedding $h_i$ combines the receiver's features and $p_i$; for each neighbour $j$, the message $m_{j\to i}$ is built from $j$'s features recomputed at the receiver's date, $x_j(t_i)$, its embedding $p_j$ and the edge attributes, so that records of $j$ from $t_i$ onwards are not used and no edge is removed. (4)~One attention layer weighs the messages, and (5,~6)~an MLP readout on $[h_i \,\|\, z_i]$ gives the probability of a new record within $N$ years.}
   \label{fig:ecopegat}
 \end{figure}
 
@@ -263,7 +263,7 @@ w_{ji} = \frac{1}{1 + d_{ji}/50\ \text{km}},
 \end{equation}
 where $d_{ji}$ is the great-circle distance between sites $j$ and $i$. The graph is transductive: development and hold-out nodes are present, and hold-out labels are never used. Node set, coordinates, survey dates and the context $c$ are treated as carrying no information about the targets (assumption A1; Section~\ref{sec:limitations}).
 
-\item \textbf{Standard Graph Attention.} In its standard form, graph attention would process EcoPE-GAT's inputs as follows (Figure~\ref{fig:ecopegat}). The node features are concatenated with the EcoPE embedding $p_i$ of the node's context, $\tilde{x}_i = [x_i \,\|\, p_i]$, and projected to width $h$ by a linear layer with layer normalisation and GELU, giving $h_i^{(0)}$. Two GAT layers then update the node representations:
+\item \textbf{Standard Graph Attention.} In its standard form, graph attention would process EcoPE-GAT's inputs as follows. The node features are concatenated with the EcoPE embedding $p_i$ of the node's context, $\tilde{x}_i = [x_i \,\|\, p_i]$, and projected to width $h$ by a linear layer with layer normalisation and GELU, giving $h_i^{(0)}$. Two GAT layers then update the node representations:
 \begin{align}
 e_{ij}^{(l)} &= \mathrm{LeakyReLU}\big(a^\top [W h_i^{(l)} \,\|\, W h_j^{(l)} \,\|\, W_e w_{ji}]\big), \qquad
 \alpha_{ij}^{(l)} = \frac{\exp(e_{ij}^{(l)})}{\sum_{k \in \mathcal{N}(i)} \exp(e_{ik}^{(l)})}, \\
@@ -345,48 +345,6 @@ where $h_i$ is the embedding of receiver $i$; $m_{j \to i}$ is the message of ed
 \item \textbf{Ablations and Variants.} \Mleaky{} and \Mcausal{} are EcoPE-GAT with its as-of layer replaced by two standard GAT layers on the stored features, on the original and on the causal graph respectively, implemented with GATConv layers \citep{velickovic2018,fey2019}; \Mnoctx{} is \Mcausal{} without the context. The secondary variant \Masofplus{} adds to the node and as-of edge features the number of target records within 100~km and in the 50--100~km ring before $t_i$. The same as-of encoding can be applied to tabular models: \Lasof{} aggregates the as-of features of all neighbours (means, maximum of the indicator, number of neighbours) as LightGBM features (Section~\ref{sec:baselines}).
 
 \end{itemize}
-
-\begin{figure}[pos=t]
-  \centering
-  \resizebox{\linewidth}{!}{%
-  \begin{tikzpicture}[font=\small, >={Stealth},
-      box/.style={draw, rounded corners=2pt, align=center, minimum height=0.9cm, inner sep=4pt},
-      dat/.style={box, fill=blue!6},
-      net/.style={box, fill=orange!12},
-      outbox/.style={box, fill=green!10}]
-    % receiver lane
-    \node[dat] (xi) at (0,2.2) {$x_i = x_i(t_i)$\\ receiver features};
-    \node[dat] (ci) at (0,0.9) {$c_i$\\ context};
-    \node[net] (pi) at (2.8,0.9) {EcoPE\\ $f_\phi$};
-    \node[net] (hi) at (5.6,2.2) {$h_i$\\ $\mathrm{LN},\ \mathrm{GELU}$};
-    % neighbour lane
-    \node[dat] (xj) at (0,-0.6) {$x_j(t_i)$\\ as-of features};
-    \node[dat] (cj) at (0,-1.9) {$c_j$\\ context};
-    \node[dat] (aj) at (0,-3.2) {$a_{j\to i}$\\ distance, $t_i - t_j$};
-    \node[net] (pj) at (2.8,-1.9) {EcoPE\\ $f_\phi$};
-    \node[net] (mj) at (5.6,-1.9) {$m_{j \to i}$\\ $\mathrm{LN},\ \mathrm{GELU}$};
-    % attention and readout
-    \node[net] (att) at (8.6,0.2) {attention\\ $\alpha_{ji}$, $\sum_j \alpha_{ji} m_{j\to i}$};
-    \node[net] (ro) at (11.6,1.2) {readout\\ MLP $[h_i \,\|\, z_i]$};
-    \node[outbox] (y) at (14.2,1.2) {$\hat{y}_i^{(N)}$};
-    % arrows
-    \draw[->] (xi) -- (hi);
-    \draw[->] (ci) -- (pi);
-    \draw[->] (pi) -- (hi);
-    \draw[->] (xj) -- (mj);
-    \draw[->] (cj) -- (pj);
-    \draw[->] (pj) -- (mj);
-    \draw[->] (aj) -| (mj);
-    \draw[->] (hi) -- (att);
-    \draw[->] (mj) -- (att);
-    \draw[->] (hi) -- (ro);
-    \draw[->] (att) -- node[below right] {$z_i$} (ro);
-    \draw[->] (ro) -- (y);
-    \node[gray, align=left, anchor=west] at (-1.2,-4.3) {for every in-neighbour $j \in \mathcal{N}(i)$; all edges kept; every time-stamped input counts records with year $< t_i$};
-  \end{tikzpicture}}
-  \caption{Architecture of the proposed EcoPE-GAT (\Masof). The receiver embedding $h_i$ combines the receiver's own time-stamped features and the EcoPE embedding of its context. For each neighbour $j$, a message is built from $j$'s features recomputed at the receiver's date, its EcoPE embedding and the edge attributes. Attention over all messages, followed by an MLP readout on $[h_i \,\|\, z_i]$, gives the probability of a new record within $N$ years.}
-  \label{fig:architecture}
-\end{figure}
 
 \subsubsection{Predictions}
 \label{sec:predictions}
@@ -676,7 +634,7 @@ Despite the contributions above, several limitations should be acknowledged, whi
 \subsection{Development History}
 \label{sec:history}
 
-For transparency we summarise the path that led to the present model; all steps are recorded in a decision log with version-control tags. The first configuration of EcoPE-GAT used functional-trait features on a trait-similarity graph (Figure~\ref{fig:ecopegat}). With an independent effort layer, traits added nothing beyond prior presence, effort and location. A pre-registered test of a second version (traits and prior presence on a combined trait and geographic graph) failed: it was not competitive with LightGBM ($-0.162$ PR-AUC, $[-0.304, +0.017]$), and the EcoPE encoder did not outperform concatenation. A pre-registered occupancy--detection extension also failed its main test. Its apparent advantage in low-effort regions was then traced to the temporal leak described here: with the causal graph, the transfer PR-AUC of the best graph model fell from 0.243 to 0.011. This finding led to the leakage hypotheses (D13), and the cost of edge deletion led to the as-of model (D14).
+For transparency we summarise the path that led to the present model; all steps are recorded in a decision log with version-control tags. The first configuration of EcoPE-GAT used functional-trait features on a $k$-nearest-neighbour graph in trait space, with two standard GAT layers and an MLP encoder. With an independent effort layer, traits added nothing beyond prior presence, effort and location. A pre-registered test of a second version (traits and prior presence on a combined trait and geographic graph) failed: it was not competitive with LightGBM ($-0.162$ PR-AUC, $[-0.304, +0.017]$), and the EcoPE encoder did not outperform concatenation. A pre-registered occupancy--detection extension also failed its main test. Its apparent advantage in low-effort regions was then traced to the temporal leak described here: with the causal graph, the transfer PR-AUC of the best graph model fell from 0.243 to 0.011. This finding led to the leakage hypotheses (D13), and the cost of edge deletion led to the as-of model (D14).
 
 % =========================================================
 \section{Conclusion}
